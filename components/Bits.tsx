@@ -4,7 +4,8 @@ import { count, pct } from '@/lib/format';
 /** A rate the way his sample size rule wants it: a fraction under the floor, a percentage above it. */
 export function RateText({ r, digits = 0 }: { r: Rate; digits?: number }) {
   if (r.whole === 0) return <span className="tabular">none yet</span>;
-  if (r.pct === null) return <span className="tabular">{count(r.part)} of {count(r.whole)}</span>;
+  // Under the sample size floor the fraction leads, and the percentage follows in a quieter tone.
+  if (r.pct === null) return <span className="tabular">{count(r.part)} of {count(r.whole)} <span style={{ color: 'rgba(255,255,255,.46)' }}>({pct((100 * r.part) / r.whole, digits)})</span></span>;
   return <span className="tabular">{pct(r.pct, digits)} <span style={{ color: 'rgba(255,255,255,.46)' }}>({count(r.part)} of {count(r.whole)})</span></span>;
 }
 
