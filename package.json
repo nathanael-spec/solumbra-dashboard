@@ -1,0 +1,40 @@
+{
+  "name": "solumbra-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "demo": "node scripts/demo.mjs",
+    "setup": "tsx scripts/setup.ts",
+    "check": "tsx scripts/check.ts",
+    "deploy": "tsx scripts/deploy.ts",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "description": "A private sales and money dashboard for a small agency: meetings, proposals, deals, cash, from the tools you already use.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nathanael-spec/solumbra-dashboard"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

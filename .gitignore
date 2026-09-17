@@ -1,0 +1,13 @@
+node_modules
+.next
+.env*
+!.env.example
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+tests/screenshots
+.playwright-cli
+# Your own branding stays out of the public repo. `npm run setup` puts them here.
+public/logo.png
+app/icon.png
+app/apple-icon.png

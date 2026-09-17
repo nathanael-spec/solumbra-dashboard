@@ -1,0 +1,556 @@
+/**
+ * Solumbra brand system — dark mode.
+ *
+ * Sourced from brand-assets/brand-strategy/05-color-system.md,
+ * 06-typography-system.md, and the 2026-07-27 graded-edge decision. Where the
+ * colour doc and the decision log disagree about the glass rim, the decision
+ * log wins — it explicitly reverses the earlier flat-hairline rule.
+ *
+ * Two rules govern everything here:
+ *   Visuals carry calm. Copy carries urgency.
+ *   Emphasis comes from scale. Weight and colour stay back.
+ */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterVariable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Dark mode — the four values. */
+  --void: #07090b;
+  --onyx: #101418;
+  --sheen: #8a9c9c;
+  --ember: #a6631d;
+
+  /* Text on void is white, not bone. */
+  --w-95: rgba(255, 255, 255, 0.95);
+  --w-68: rgba(255, 255, 255, 0.68);
+  --w-46: rgba(255, 255, 255, 0.46);
+
+  /* Glass: fills .05/.075/.10/.15 at blur 6/12/20/40. .10 at 20 is the
+     reference card's own value and the default here. */
+  --glass-fill: rgba(255, 255, 255, 0.1);
+  --glass-fill-lo: rgba(255, 255, 255, 0.05);
+  --glass-blur: 20px;
+
+  /* The graded rim. One light direction, 142deg, for every surface. */
+  --rim-base: rgba(255, 255, 255, 0.12);
+  --rim-lit: rgba(255, 255, 255, 0.58);
+  --rim-return: rgba(255, 255, 255, 0.26);
+
+  /* 6.2mm at 96dpi. */
+  --radius: 23px;
+  --radius-sm: 14px;
+
+  --font:
+    'Inter', 'Inter Variable', 'Helvetica Now Display', 'Helvetica Neue',
+    -apple-system, Arial, sans-serif;
+
+  --measure: 62ch;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--void);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--void);
+  color: var(--w-95);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
+  font-variation-settings: 'opsz' 18;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/**
+ * The ground is never a flat fill. One large soft luminous form crosses the
+ * frame behind the panes, brightest at --sheen, with exactly one --ember
+ * buried inside it. The glass sits across the boundary so part of each pane
+ * is over black and part is over light — that contrast is the whole effect.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      68% 52% at 18% 12%,
+      rgba(138, 156, 156, 0.22),
+      rgba(138, 156, 156, 0.06) 42%,
+      transparent 72%
+    ),
+    radial-gradient(30% 24% at 26% 22%, rgba(166, 99, 29, 0.18), transparent 66%),
+    radial-gradient(50% 40% at 88% 96%, rgba(138, 156, 156, 0.07), transparent 70%);
+}
+
+/* Grain. Keeps either ground off a flat value. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Type ─────────────────────────────────────────────────────────────
+   Never above weight 600, never above 500 at display size. Display sits
+   at 2.5x the body or more with nothing in between — a 24px "medium
+   heading" is the failure mode. Sentence case, ending in a full stop. */
+
+.display {
+  font-size: clamp(40px, 7vw, 62px);
+  font-weight: 400;
+  font-variation-settings: 'opsz' 32;
+  letter-spacing: -0.022em;
+  line-height: 1.02;
+  color: var(--w-95);
+  margin: 0;
+}
+
+.headline {
+  font-size: clamp(32px, 5vw, 44px);
+  font-weight: 500;
+  font-variation-settings: 'opsz' 32;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--w-95);
+  margin: 0;
+}
+
+.deck {
+  font-size: 19px;
+  font-weight: 400;
+  font-variation-settings: 'opsz' 20;
+  letter-spacing: -0.005em;
+  line-height: 1.45;
+  color: var(--w-68);
+  max-width: var(--measure);
+  margin: 0;
+}
+
+.body {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--w-95);
+  max-width: var(--measure);
+}
+
+.caption {
+  font-size: 13px;
+  font-weight: 400;
+  font-variation-settings: 'opsz' 14;
+  letter-spacing: 0.005em;
+  color: var(--w-68);
+  line-height: 1.5;
+}
+
+/* The brand's signature typographic move. Content must be true. */
+.spec {
+  font-size: 10px;
+  font-weight: 500;
+  font-variation-settings: 'opsz' 14;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--w-46);
+  line-height: 1.4;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+/* ── Glass ────────────────────────────────────────────────────────────
+   The graded rim is built from two zero-blur inset shadows on opposite
+   diagonals over a base ring. NOT mask-composite: Chrome emits that as a
+   soft mask and Quartz composites soft masks as opaque grey rectangles,
+   which shipped once and had to be pulled. Inset shadows stay vector and
+   survive Quartz. */
+
+.pane {
+  position: relative;
+  z-index: 1;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 0 0 1px var(--rim-base),
+    inset 1px 1px 0 0 var(--rim-lit),
+    inset -1px -1px 0 0 var(--rim-return),
+    inset 0 -10px 16px -12px rgba(0, 0, 0, 0.55);
+}
+
+@supports (corner-shape: squircle) {
+  .pane {
+    corner-shape: squircle;
+  }
+}
+
+/* ── Controls ─────────────────────────────────────────────────────────
+   Buttons are glass pills, never a coloured fill. Pill-shaped panes are
+   exempt from the squircle — a superellipse at full radius clamp goes
+   visibly boxy. */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 0 0 1px var(--rim-base),
+    inset 1px 1px 0 0 var(--rim-lit),
+    inset -1px -1px 0 0 var(--rim-return);
+  color: var(--w-95);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  font-variation-settings: 'opsz' 14;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.pill:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.pill:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.pill:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pill.quiet {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--rim-base);
+  color: var(--w-68);
+}
+
+.pill.quiet:hover:not(:disabled) {
+  background: var(--glass-fill-lo);
+  color: var(--w-95);
+}
+
+/* Text inputs. Same rim language, quieter. */
+.input {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0;
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 0 0 1px var(--rim-base),
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.22);
+  color: var(--w-95);
+  font-family: var(--font);
+  font-size: 16px; /* 16px stops iOS zooming the page on focus. */
+  font-variation-settings: 'opsz' 18;
+  line-height: 1.5;
+  transition: box-shadow 160ms ease;
+}
+
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.input:focus {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.34),
+    inset 1px 1px 0 0 var(--rim-lit);
+}
+
+textarea.input {
+  min-height: 108px;
+  resize: vertical;
+}
+
+/**
+ * Choices. The active state is a second, brighter pane inside the first —
+ * you read the layer change, not a fill colour. There is no brand colour to
+ * reach for and that is the system working, not a gap.
+ */
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 18px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.035);
+  border: 0;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  color: var(--w-68);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  font-variation-settings: 'opsz' 18;
+  line-height: 1.45;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease;
+}
+
+.choice:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--w-95);
+}
+
+.choice[aria-pressed='true'],
+.choice.selected {
+  background: rgba(255, 255, 255, 0.13);
+  color: var(--w-95);
+  box-shadow:
+    inset 0 0 0 1px var(--rim-base),
+    inset 1px 1px 0 0 var(--rim-lit),
+    inset -1px -1px 0 0 var(--rim-return);
+}
+
+/* The marker is a ring that fills with light, not a coloured tick. */
+.marker {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  transition: box-shadow 140ms ease;
+}
+
+.marker.square {
+  border-radius: 5px;
+}
+
+.choice.selected .marker {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 0 0 5px rgba(255, 255, 255, 0.9);
+}
+
+.choice.selected .marker.square {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 0 0 8px rgba(255, 255, 255, 0.9);
+}
+
+.choice-hint {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--w-46);
+}
+
+/* ── Layout ───────────────────────────────────────────────────────────── */
+
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 96px;
+}
+
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 56px;
+}
+
+/* Never recolour, rotate, stretch or regenerate the mark. Minimum 64px on
+   screen; clear space is one tube diameter on all sides. */
+.mark {
+  width: 64px; /* Brand minimum on screen. Never smaller. */
+  height: 64px;
+  object-fit: contain;
+  display: block;
+}
+
+.field {
+  margin-bottom: 34px;
+}
+
+.field-label {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  font-variation-settings: 'opsz' 18;
+  line-height: 1.45;
+  color: var(--w-95);
+  margin-bottom: 6px;
+}
+
+.field-hint {
+  display: block;
+  font-size: 13px;
+  color: var(--w-46);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.field-label + .input,
+.field-label + .choices {
+  margin-top: 12px;
+}
+
+/* Carries the prospect's own name through the form once they have given it. */
+.spec-subject {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* A correction offer, not an error. Quiet enough to ignore. */
+.suggestion {
+  display: block;
+  margin-top: 10px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--w-68);
+  font-family: var(--font);
+  font-size: 13.5px;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(255, 255, 255, 0.25);
+}
+
+.suggestion:hover {
+  color: var(--w-95);
+  text-decoration-color: rgba(255, 255, 255, 0.6);
+}
+
+.suggestion strong {
+  font-weight: 500;
+}
+
+.choices {
+  display: grid;
+  gap: 8px;
+}
+
+.choices.two-up {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+/* No progress bar. A counted set of marks states position without
+   implying a deadline — nothing in this brand is allowed to look hurried. */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.step-dot {
+  width: 22px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 200ms ease;
+}
+
+.step-dot.done {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.step-dot.current {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.problems {
+  margin: 24px 0 0;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  color: var(--w-68);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.problems ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.divider {
+  height: 1px;
+  border: 0;
+  margin: 0 0 34px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+@media (max-width: 560px) {
+  .shell {
+    padding: 28px 18px 72px;
+  }
+  .masthead {
+    margin-bottom: 40px;
+  }
+  .footer-bar {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .footer-bar .pill {
+    width: 100%;
+  }
+  .steps {
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
