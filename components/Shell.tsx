@@ -20,7 +20,6 @@ const ALL_PAGES: { href: string; label: string; needs?: Need }[] = [
 
 const PERIODS: { key: PeriodKey; label: string }[] = [
   { key: 'week', label: 'Week' },
-  { key: 'lastweek', label: 'Last week' },
   { key: 'month', label: 'Month' },
   { key: 'quarter', label: 'Quarter' },
   { key: 'all', label: 'All time' },
@@ -119,6 +118,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span className="spec">{String(i + 1).padStart(2, '0')}</span>
           </Link>
         ))}
+        {config?.proposalsUrl ? (
+          <a className="away" href={config.proposalsUrl} target="_blank" rel="noreferrer noopener">
+            <span>Proposals</span>
+            <span className="spec" aria-hidden>&#8599;</span>
+          </a>
+        ) : null}
         <div className="rail-foot">
           <Connections />
           <button className="quiet-btn logout" onClick={logout}>Log out</button>

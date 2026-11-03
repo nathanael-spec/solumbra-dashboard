@@ -17,6 +17,7 @@ export interface DashConfig {
   connected: { sheets: boolean; pipeline: boolean; calcom: boolean; instantly: boolean; vollna: boolean; stripe: boolean };
   demo: boolean;
   logoUrl: string;
+  proposalsUrl: string;  // where proposals are published, blank hides the link
 }
 
 export interface LedgerRow {
@@ -144,6 +145,8 @@ export interface VollnaData {
   proposals: Proposal[];
   connectsBalance: number | null;
   lastSyncAt: string | null;
+  /** Vollna's API, or the "Upwork proposals" tab exported from their website by hand. */
+  from: 'api' | 'sheet';
 }
 
 export interface StripeBalance { availableCents: number; pendingCents: number; currency: string }

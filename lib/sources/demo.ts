@@ -120,7 +120,7 @@ export function demoBlob(config: DashConfig): Blob {
     stageLog: ok(log), notes: ok([]),
     cards: ok(cards), bookings: ok(bookings),
     instantly: ok({ campaigns, daily, mailboxes, today: daysAgo(0), ceiling: 160, campaignCeiling: 160, mailboxCeiling: 220, windowShare: 0.6, windowOpen: true }),
-    vollna: ok({ proposals, connectsBalance: 84, lastSyncAt: new Date(Date.now() - 3600000).toISOString() }),
+    vollna: ok({ proposals, connectsBalance: 84, lastSyncAt: new Date(Date.now() - 3600000).toISOString(), from: 'api' as const }),
     stripe: ok({ availableCents: 125000, pendingCents: 80000, currency: 'usd' }),
   };
 }

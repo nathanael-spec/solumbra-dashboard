@@ -1,8 +1,8 @@
 import { unstable_cache } from 'next/cache';
-import type { Blob, Source, StageEvent, Card } from '../types';
+import type { Blob, Source, StageEvent, Card, DashConfig, VollnaData } from '../types';
 import { has, readConfig } from '../config';
 import { attempt, now, off } from './util';
-import { readPnl, readDashboardSheet } from './sheets';
+import { readPnl, readDashboardSheet, readUpworkSheet } from './sheets';
 import { readCards } from './clickup';
 import { readPipelineSheet } from './pipelineSheet';
 import { readBookings } from './calcom';
@@ -14,6 +14,23 @@ import { demoBlob } from './demo';
 // Vollna allows 30 calls a minute and every read is eight of them, so it keeps
 // its own cache: fifteen minutes, untouched by the page's refresh control.
 const cachedVollna = unstable_cache(readVollna, ['vollna'], { revalidate: 900, tags: ['vollna'] });
+
+/**
+ * Upwork proposals come from Vollna's API when the plan includes it, and from
+ * the "Upwork proposals" tab of the dashboard sheet when it does not. Their
+ * API answers 403 on every plan below Agency, which is why the tab exists:
+ * the same data, exported from their website as a CSV file and pasted in.
+ */
+async function readUpwork(config: DashConfig): Promise<Source<VollnaData>> {
+  const tabOn = config.connected.sheets || has('DASHBOARD_SHEET_ID');
+  if (config.connected.vollna) {
+    const api = await attempt('Vollna', cachedVollna);
+    if (api.ok || !tabOn) return api;
+    const tab = await attempt('Upwork proposals tab', readUpworkSheet);
+    return tab.ok ? tab : api;
+  }
+  return tabOn ? attempt('Upwork proposals tab', readUpworkSheet) : off<VollnaData>();
+}
 
 /** One sheet read carries several tabs. This hands each tab its own answer. */
 function part<T extends object, K extends keyof T>(s: Source<T>, key: K): Source<T[K]> {
@@ -37,7 +54,7 @@ export async function collect(): Promise<Blob> {
     when(config.pipeline === 'sheet' && config.connected.pipeline, 'Pipeline tab', readPipelineSheet),
     when(config.connected.calcom, 'Cal.com', readBookings),
     when(config.connected.instantly, 'Instantly', () => readInstantly(90)),
-    when(config.connected.vollna, 'Vollna', cachedVollna),
+    readUpwork(config),
     when(config.connected.stripe, 'Stripe', readStripeBalance),
   ]);
 

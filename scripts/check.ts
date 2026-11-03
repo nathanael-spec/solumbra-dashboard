@@ -7,7 +7,7 @@ import { loadEnv } from './env';
 loadEnv();
 
 import { readConfig } from '../lib/config';
-import { readPnl, readDashboardSheet } from '../lib/sources/sheets';
+import { readPnl, readDashboardSheet, readUpworkSheet } from '../lib/sources/sheets';
 import { readCards } from '../lib/sources/clickup';
 import { readPipelineSheet } from '../lib/sources/pipelineSheet';
 import { readBookings } from '../lib/sources/calcom';
@@ -36,6 +36,7 @@ export async function checkAll(): Promise<Row[]> {
   await run('Cal.com', c.connected.calcom, async () => `${(await readBookings()).length} bookings`);
   await run('Instantly', c.connected.instantly, async () => { const i = await readInstantly(30); return `${i.campaigns.length} campaigns, ${i.mailboxes.length} mailboxes`; });
   await run('Vollna', c.connected.vollna, async () => { const v = await readVollna(); return `${v.proposals.length} applications, balance ${v.connectsBalance ?? 'unknown'}`; });
+  await run('Upwork proposals tab', c.connected.sheets, async () => { const v = await readUpworkSheet(); return `${v.proposals.length} applications, newest ${v.lastSyncAt?.slice(0, 10) ?? 'unknown'}`; });
   await run('Stripe', c.connected.stripe, async () => { const s = await readStripeBalance(); return `available ${(s.availableCents / 100).toFixed(2)}`; });
   return rows;
 }

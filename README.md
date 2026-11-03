@@ -19,7 +19,7 @@ password. Free to run: Vercel's free plan and the tools' own free APIs.
 | Meetings, proposals, deals | ClickUp, or a Pipeline tab in the same sheet, or the Add button | One of the three |
 | Meetings booked on your site | Cal.com | Optional |
 | Cold email: sent, bounces, replies, mailboxes | Instantly | Optional |
-| Upwork: viewed, conversations, hired, connects | Vollna | Optional |
+| Upwork: view rate, reply rate, conversion rate, cost per reply, client cost | Vollna | Optional |
 | Balance available and pending | Stripe, read only | Optional |
 
 Pages for tools you do not connect are simply not shown.
@@ -85,14 +85,15 @@ Run `npm run deploy` again after any change.
 ## Day to day
 
 - **Add**, top right, records a meeting, a proposal, a deal or a payment that no tool saw. A meeting booked over WhatsApp, cash by bank transfer. Meetings, proposals and deals go to the Stage log tab; cash goes to the Ledger.
-- **Week, Last week, Month, Quarter, All time, Dates** change every number on every page at once.
+- **Week, Month, Quarter, All time, Dates** change every number on every page at once.
 - Every tile opens bigger, with the chart and the rows behind the number.
 - **Connections**, bottom left, says when each tool was last read, and shows a tool as failed with the reason on hover.
 - Money is only ever counted from the Ledger. Stripe is a balance, not revenue. If it is not in the sheet, it did not happen.
 
 ## The rules the numbers follow
 
-- A rate with fewer than 10 in the denominator is shown as "2 of 6", never as a percentage. Upwork rates need 50 applications. Small samples do not get to look like trends.
+- A rate with fewer than 10 in the denominator is shown as "2 of 6", never as a percentage. Small samples do not get to look like trends.
+- The Upwork rates are the exception: they read as a percentage in every period, because a single week of applications is what you steer on. The fraction behind the percentage is always printed beside it, and under 50 applications the page says the rates move a lot.
 - The funnel counts the **first** time a card reached a stage, inside the period. Moving a card back and forward does not count twice.
 - There is no email open rate anywhere. Open tracking is unreliable and hurts deliverability.
 - Cash per closed deal is matched from the Ledger to the won cards by company or name, so it reads what was actually paid, not the deal value on the card.

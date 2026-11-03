@@ -37,7 +37,7 @@ If they only want to look: `npm run demo`.
 | `lib/sources/demo.ts` | Made up data for `DEMO=1`. Fictional names only. |
 | `lib/stages.ts` | The five stages and `stageOf`, which reads any CRM's status name into them. `channelOf` maps a card's Source onto the configured channels. |
 | `lib/metrics.ts` | Every number, computed from rows, no fetching. Tested in `tests/metrics.test.ts`. |
-| `lib/period.ts` | Week, last week, month, quarter, all time, custom, with the comparison window. |
+| `lib/period.ts` | Week, month, quarter, all time, custom, with the comparison window. |
 | `lib/store.tsx` | One fetch of `/api/data`, held in React context. Period filtering is client side and instant. |
 | `app/(dash)/*/page.tsx` | Today, Money, Pipeline, Cold email, Upwork. Each fits one screen at 1440 by 900. |
 | `app/api/data` | The blob, cached 5 minutes, `?fresh=1` bypasses. `app/api/manual` writes the Add form. `app/api/hooks/clickup` is the webhook. |
@@ -51,7 +51,8 @@ If they only want to look: `npm run demo`.
 These are load bearing. Do not relax them for a nicer looking page.
 
 - **Money is counted from the Ledger tab only.** Stripe is a balance line. Revenue in is every `In` row; cash collected is `In` rows marked `Received`; costs are every `Out` row, fees included.
-- **Sample size rule.** `rate(part, whole, minN)` returns `pct: null` under `minN` and the UI shows "2 of 6". Default 10; Upwork rates 50; cold email reply rates 50 people. Never format a small sample as a percentage.
+- **Sample size rule.** `rate(part, whole, minN)` returns `pct: null` under `minN` and the UI shows "2 of 6". Default 10; cold email reply rates 50 people. Never format a small sample as a percentage.
+- **Upwork rates are the one exception,** by his request: `upRate` uses `minN: 1`, so view, reply, conversion and hire rates read as a percentage in every period, week included. The fraction is always printed next to the percentage and the page says "under 50 in this period, so the rates move a lot" while `thin` is true. The five numbers match the ones his proposal tracker shows: view rate `viewed/sent`, reply rate `replies/sent`, conversion rate `replies/viewed`, cost per reply and client acquisition cost, both from connects spent at $0.15.
 - **No email open rate**, ever. Instantly's `new_leads_contacted_count` is the people count, never `contacted_count`.
 - **The funnel counts first entries.** `firstEntries` in `metrics.ts` takes the earliest date each card reached each stage.
 - **Outside benchmarks are labelled** as such when shown; they are never presented as the business's own target.

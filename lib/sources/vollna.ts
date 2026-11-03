@@ -51,5 +51,5 @@ export async function readVollna(): Promise<VollnaData> {
     }
     if (page >= (body.pagination?.total_pages ?? 1)) break;
   }
-  return { proposals, connectsBalance: me?.connectsBalance ?? null, lastSyncAt: me?.lastSyncAt ?? null };
+  return { proposals, connectsBalance: me?.connectsBalance ?? null, lastSyncAt: me?.lastSyncAt ?? null, from: 'api' };
 }

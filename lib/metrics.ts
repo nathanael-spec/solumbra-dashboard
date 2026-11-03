@@ -327,10 +327,33 @@ export function mailboxHealth(data: InstantlyData): { total: number; sending: nu
 
 /* ----------------------------------------------------------------- upwork */
 
+/**
+ * Upwork rates read as a percentage in every period, however short it is,
+ * because a week of applications is what he actually steers on. The fraction
+ * behind the percentage is always printed next to it, and under THIN_SAMPLE
+ * applications the page says in words that the number moves a lot. That is the
+ * sample size rule kept honest without hiding the percentage.
+ *
+ * The five rates are the ones his proposal tracker shows, computed the same way:
+ *   view rate        viewed  / sent    a client opened the application
+ *   reply rate       replied / sent    a client wrote back
+ *   conversion rate  replied / viewed  of the ones who read it, who answered
+ *   cost per reply   connects spent, in dollars, / replies
+ *   client cost      connects spent, in dollars, / hires
+ */
+export const THIN_SAMPLE = 50;
+
+/** A rate that always resolves to a percentage when there is anything in the denominator. */
+const upRate = (part: number, whole: number): Rate => rate(part, whole, 1);
+const dollarsPer = (dollars: number, n: number): number | null => (n > 0 ? Math.round((dollars / n) * 100) / 100 : null);
+
 export interface UpworkPeriod {
-  sent: number; viewed: number; interviewed: number; hired: number; withdrawn: number;
+  sent: number; viewed: number; replies: number; hired: number; withdrawn: number;
   connects: number; boosts: number; dollars: number;
-  viewRate: Rate; interviewRate: Rate; hireRate: Rate; viewToInterview: Rate; interviewToHire: Rate;
+  viewRate: Rate; replyRate: Rate; conversionRate: Rate; hireRate: Rate; replyToHire: Rate;
+  costPerReply: number | null;
+  cac: number | null;          // what one client won cost in connects
+  thin: boolean;               // fewer applications than THIN_SAMPLE, so every rate is jumpy
   proposals: Proposal[];
 }
 
@@ -338,16 +361,22 @@ export function upworkPeriod(proposals: Proposal[], p: { start: string; end: str
   const rows = proposals.filter((x) => inPeriod(x.submittedAt.slice(0, 10), p));
   const live = rows.filter((x) => !x.withdrawn);
   const viewed = live.filter((x) => x.viewed).length;
-  const interviewed = live.filter((x) => x.interviewed).length;
+  const replies = live.filter((x) => x.interviewed).length;
   const hired = live.filter((x) => x.hired).length;
   // Vollna's `connects` already includes the boost, so the boost is not added again.
   const connects = rows.reduce((s, x) => s + x.connects, 0);
+  const dollars = Math.round(connects * CONNECT_PRICE * 100) / 100;
   return {
-    sent: live.length, viewed, interviewed, hired, withdrawn: rows.length - live.length,
-    connects, boosts: rows.filter((x) => x.boost > 0).length, dollars: connects * CONNECT_PRICE,
-    viewRate: rate(viewed, live.length, 50), interviewRate: rate(interviewed, live.length, 50), hireRate: rate(hired, live.length, 50),
-    viewToInterview: rate(interviewed, viewed, 10),
-    interviewToHire: rate(hired, interviewed, 10),
+    sent: live.length, viewed, replies, hired, withdrawn: rows.length - live.length,
+    connects, boosts: rows.filter((x) => x.boost > 0).length, dollars,
+    viewRate: upRate(viewed, live.length),
+    replyRate: upRate(replies, live.length),
+    conversionRate: upRate(replies, viewed),
+    hireRate: upRate(hired, live.length),
+    replyToHire: upRate(hired, replies),
+    costPerReply: dollarsPer(dollars, replies),
+    cac: dollarsPer(dollars, hired),
+    thin: live.length < THIN_SAMPLE,
     proposals: rows.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
   };
 }

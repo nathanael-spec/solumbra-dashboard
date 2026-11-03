@@ -1,4 +1,4 @@
-export type PeriodKey = 'week' | 'lastweek' | 'month' | 'quarter' | 'all' | 'custom';
+export type PeriodKey = 'week' | 'month' | 'quarter' | 'all' | 'custom';
 
 export interface Period {
   key: PeriodKey;
@@ -9,7 +9,7 @@ export interface Period {
   compareEnd?: string;
 }
 
-export const PERIOD_KEYS: PeriodKey[] = ['week', 'lastweek', 'month', 'quarter', 'all', 'custom'];
+export const PERIOD_KEYS: PeriodKey[] = ['week', 'month', 'quarter', 'all', 'custom'];
 
 export function ymd(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -48,10 +48,6 @@ export function makePeriod(key: PeriodKey, today: string, custom?: { start: stri
   switch (key) {
     case 'week':
       return withCompare({ key, label: 'This week', start: weekStart(today), end: today });
-    case 'lastweek': {
-      const start = addDays(weekStart(today), -7);
-      return withCompare({ key, label: 'Last week', start, end: addDays(start, 6) });
-    }
     case 'month':
       return withCompare({ key, label: 'This month', start: `${today.slice(0, 7)}-01`, end: today });
     case 'quarter': {

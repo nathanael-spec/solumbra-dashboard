@@ -14,7 +14,7 @@
  * Either way the hour long access key is kept in memory and renewed early.
  */
 import { createSign } from 'node:crypto';
-import type { LedgerRow, RecurringRow, RunRow, StageEvent, NoteRow } from '../types';
+import type { LedgerRow, RecurringRow, RunRow, StageEvent, NoteRow, Proposal, VollnaData } from '../types';
 import { env, num } from './util';
 
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
@@ -211,6 +211,63 @@ export async function readDashboardSheet(): Promise<{ runs: RunRow[]; stageLog: 
     stageLog: parseStageLog(got['Stage log!A1:F5000']),
     notes: parseNotes(got['Notes!A1:D500']),
   };
+}
+
+/**
+ * Upwork proposals kept in a sheet tab instead of read from Vollna's API.
+ * Vollna's own API is on their top plan; on any plan below it their website
+ * still exports every proposal as a CSV file, and that file is what fills this
+ * tab. Columns are found by heading, so the tab can carry extra columns the
+ * dashboard ignores.
+ */
+export function parseProposals(rows: string[][]): Proposal[] {
+  const { col, body } = byHeading(rows);
+  const c = {
+    at: col('sent at'), title: col('job'), client: col('client'),
+    connects: col('connects'), boost: col('boost'), position: col('position'),
+    minutes: col('response minutes'), viewed: col('viewed'), replied: col('replied'),
+    hired: col('hired'), withdrawn: col('withdrawn'), invitation: col('invitation'), uid: col('uid'),
+  };
+  const flag = (r: string[], i: number) => ['yes', 'true', '1'].includes(cell(r, i).toLowerCase());
+  const maybe = (r: string[], i: number) => (cell(r, i) === '' ? null : num(r[i]));
+  return body
+    .filter((r) => cell(r, c.at) !== '')
+    .map((r, i) => ({
+      uid: cell(r, c.uid) || `row-${i}`,
+      submittedAt: cell(r, c.at),
+      title: cell(r, c.title) || '(job post removed)',
+      client: cell(r, c.client),
+      connects: num(r[c.connects]),
+      boost: num(r[c.boost]),
+      viewed: flag(r, c.viewed),
+      interviewed: flag(r, c.replied),
+      hired: flag(r, c.hired),
+      withdrawn: flag(r, c.withdrawn),
+      invitation: flag(r, c.invitation),
+      position: maybe(r, c.position),
+      responseMinutes: maybe(r, c.minutes),
+    }));
+}
+
+/** Reads the "Upwork proposals" tab on its own, so a missing tab only costs the Upwork screen. */
+export async function readUpworkSheet(): Promise<VollnaData> {
+  const id = dashboardSheetId();
+  let got: Record<string, string[][]>;
+  try {
+    got = await readRanges(id, ['Upwork proposals!A1:Z2000']);
+  } catch (e) {
+    const why = e instanceof Error ? e.message : String(e);
+    throw new Error(
+      /Unable to parse range|not found/i.test(why)
+        ? 'There is no "Upwork proposals" tab in the dashboard sheet yet. Export your proposals from vollna.com and put them in a tab with that name.'
+        : why,
+    );
+  }
+  const proposals = parseProposals(got['Upwork proposals!A1:Z2000']);
+  const lastSyncAt = proposals.length
+    ? proposals.map((p) => p.submittedAt).sort().slice(-1)[0]
+    : null;
+  return { proposals, connectsBalance: null, lastSyncAt, from: 'sheet' };
 }
 
 export async function logStageChange(event: StageEvent): Promise<void> {
