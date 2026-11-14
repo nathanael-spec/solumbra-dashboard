@@ -2,7 +2,7 @@
 
 import { Tile, Problem } from '@/components/Tile';
 import { Hero, KV, Notice, RateText, Table } from '@/components/Bits';
-import { Bars, C1, C2, C3 } from '@/components/Charts';
+import { Bars, C1, C2, C3, C4 } from '@/components/Charts';
 import { useDash } from '@/lib/store';
 import { money, count, pct, shortDate, weekLabel } from '@/lib/format';
 import { CONNECT_PRICE, THIN_SAMPLE, channelSpend, trimLeading, upworkFromDays, upworkPeriod, upworkWeekly, upworkWeeklyFromDays, type Rate } from '@/lib/metrics';
@@ -61,7 +61,7 @@ export default function UpworkPage() {
 
       <Tile title="Applications, week by week, last 10 weeks" span={8}
         big={<Table head={['Week of', 'Sent', 'Opened', 'Wrote back', 'Hired']} numeric={[1, 2, 3, 4]} rows={[...weeks].reverse().map((w) => [w.label, count(w.sent), count(w.viewed), count(w.interviewed), count(w.hired)])} />}>
-        <Bars data={weeks} x="label" series={[{ key: 'sent', name: 'Sent', color: C1 }, { key: 'viewed', name: 'Opened', color: C2 }, { key: 'interviewed', name: 'Wrote back', color: C3 }]} fmt={count} tall shareOf="sent" labels={false} />
+        <Bars data={weeks} x="label" series={[{ key: 'sent', name: 'Sent', color: C1 }, { key: 'viewed', name: 'Opened', color: C2 }, { key: 'interviewed', name: 'Wrote back', color: C3 }, { key: 'hired', name: 'Hired', color: C4 }]} fmt={count} tall shareOf="sent" labels={false} />
       </Tile>
       {fromDays ? (
         <Tile title={`What it cost, ${label}`} span={4} foot="Every Upwork cost in the P&L sheet for this period: connects, fees and tools.">
