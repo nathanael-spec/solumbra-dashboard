@@ -136,6 +136,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span className="spec" aria-hidden>&#8599;</span>
           </a>
         ) : null}
+        {config?.weekUrl ? (
+          <a className="away" href={config.weekUrl} target="_blank" rel="noreferrer noopener">
+            <span>LinkedIn week</span>
+            <span className="spec" aria-hidden>&#8599;</span>
+          </a>
+        ) : null}
         <div className="rail-foot">
           <Connections />
           <button className="quiet-btn logout" onClick={logout}>Log out</button>

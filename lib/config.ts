@@ -56,5 +56,6 @@ export function readConfig(): DashConfig {
     demo,
     logoUrl: process.env.LOGO_URL?.trim() || '',
     proposalsUrl: process.env.PROPOSALS_URL?.trim() || '',
+    weekUrl: process.env.LINKEDIN_WEEK_URL?.trim() || '',
   };
 }

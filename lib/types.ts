@@ -18,6 +18,7 @@ export interface DashConfig {
   demo: boolean;
   logoUrl: string;
   proposalsUrl: string;  // where proposals are published, blank hides the link
+  weekUrl: string;       // the weekly content review page (LinkedIn week), blank hides the link
 }
 
 export interface LedgerRow {
