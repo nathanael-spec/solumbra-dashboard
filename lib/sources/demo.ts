@@ -3,7 +3,7 @@
  * before a single tool is connected. `npm run demo` turns it on. Every name
  * here is fictional. The shapes are the same ones the real readers return.
  */
-import type { Blob, Booking, Card, DashConfig, LedgerRow, Proposal, RecurringRow, StageEvent } from '../types';
+import type { RetroData, RetroDay, RetroNumber, Blob, Booking, Card, DashConfig, LedgerRow, Proposal, RecurringRow, StageEvent } from '../types';
 import { now } from './util';
 
 const DAY = 86400000;
@@ -122,5 +122,33 @@ export function demoBlob(config: DashConfig): Blob {
     instantly: ok({ campaigns, daily, mailboxes, today: daysAgo(0), ceiling: 160, campaignCeiling: 160, mailboxCeiling: 220, windowShare: 0.6, windowOpen: true }),
     vollna: ok({ proposals, connectsBalance: 84, lastSyncAt: new Date(Date.now() - 3600000).toISOString(), from: 'api' as const }),
     stripe: ok({ availableCents: 125000, pendingCents: 80000, currency: 'usd' }),
+    retro: ok(demoRetro(daysAgo)),
+  };
+}
+
+/** A made up retrospective, so the Retro screen has something to show in demo mode. */
+function demoRetro(daysAgo: (n: number) => string): RetroData {
+  const days: RetroDay[] = Array.from({ length: 90 }, (_, i) => {
+    const n = 89 - i;
+    return {
+      date: daysAgo(n), uw_apps: i % 7 < 5 ? 4 : 0, uw_viewed: i % 3 === 0 ? 1 : 0, uw_replied: i % 9 === 0 ? 1 : 0, uw_hired: i % 40 === 0 ? 1 : 0,
+      em_sent: 300 + (i % 5) * 20, em_replies: i % 2, em_positive: i % 11 === 0 ? 1 : 0, em_meetings: i % 30 === 0 ? 1 : 0,
+      li_posts: 1, li_impressions: 150 + ((i * 37) % 200), li_measured: 1, li_new_connections: i % 2,
+      ...(i % 14 === 0 ? { li_followers: 200 + i * 2 } : {}),
+    };
+  });
+  const num = (label: string, now: number, prev: number, all: number, kind: RetroNumber['kind'] = 'num') => ({ label, now, prev, all, kind, lower_better: false });
+  return {
+    days,
+    retros: [{
+      date: daysAgo(0), start: daysAgo(13), end: daysAgo(0), prev_start: daysAgo(27), prev_end: daysAgo(14),
+      summary: ['Made up numbers for the demo.', 'Cold email replies fell, positive replies held.', 'Upwork views rose after changing which jobs get an application.'],
+      changes: [],
+      channels: [
+        { name: 'LinkedIn', verdict: 'Keep going. Posts that open with a question did best.', keep: [{ what: 'Question in line 1', evidence: '3 of 4 such posts beat the normal' }], change: [], stop: [{ what: 'Tool reviews', evidence: 'Lowest views, 3 times in a row' }], learnings: [{ rule: 'A question in line 1 lifts views', evidence: '3 of 4 posts', status: 'testing' }], next_change: 'Open the next 3 posts with a question.', numbers: [num('Posts made', 14, 12, 90)], funnel: [], top: [{ label: 'Best post', value: '412 views', note: 'question opener' }] },
+        { name: 'Upwork', verdict: 'Change the step after the view.', keep: [], change: [{ what: 'Shorter video', evidence: 'Viewed, then no reply, 7 times' }], stop: [], next_change: 'Shorter video on every application.', numbers: [num('Applications sent', 40, 38, 260), num('View rate', 0.25, 0.2, 0.22, 'pct')], funnel: [{ step: 'Sent', count: 40, broken: false }, { step: 'Viewed', count: 10, rate: 0.25, prev_rate: 0.2, normal_rate: 0.22, broken: false }, { step: 'Replied', count: 2, rate: 0.2, prev_rate: 0.4, normal_rate: 0.35, broken: true }, { step: 'Hired', count: 1, rate: 0.5, prev_rate: 0, normal_rate: 0.3, broken: false }] },
+        { name: 'Cold email', verdict: 'Stop the old offer, test the new one.', keep: [], change: [], stop: [], next_change: 'Split test two offers, 1,000 sends each.', numbers: [num('Emails sent', 4400, 4100, 27000)], funnel: [{ step: 'Sent', count: 4400, broken: false }, { step: 'Replied', count: 22, rate: 0.005, normal_rate: 0.007, broken: true }, { step: 'Positive', count: 4, rate: 0.18, normal_rate: 0.15, broken: false }] },
+      ],
+    }],
   };
 }
