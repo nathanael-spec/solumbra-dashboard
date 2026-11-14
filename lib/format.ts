@@ -49,3 +49,13 @@ export function ago(iso: string, nowMs = Date.now()): string {
 export function plural(n: number, one: string, many = one + 's'): string {
   return `${count(n)} ${n === 1 ? one : many}`;
 }
+
+/** Money for a chart axis, where there is no room for every digit: $850, $1.2k, $14k. */
+export function moneyShort(n: number): string {
+  const a = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (a < 1000) return money(Math.round(n));
+  const k = a / 1000;
+  const symbol = whole.format(0).replace(/[\d.,\s]/g, '');
+  return `${sign}${symbol}${k >= 10 || Number.isInteger(k) ? Math.round(k) : k.toFixed(1)}k`;
+}

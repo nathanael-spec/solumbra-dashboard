@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import ledgerRows from './fixtures/ledger.json';
 import { parseLedger, parseProposals, sheetDate } from '@/lib/sources/sheets';
-import { cashFromWon, channels, funnel, ltv, moneyTotals, monthly, rate, upworkPeriod, weekly, daysSinceMoneyIn } from '@/lib/metrics';
+import { cashFromWon, channels, clientList, funnel, growth, ltv, moneyTotals, monthly, otherMoneyIn, rate, unitEconomics, upworkPeriod, weekly, daysSinceMoneyIn } from '@/lib/metrics';
 import { channelOf, stageOf } from '@/lib/stages';
 import { parsePipeline } from '@/lib/sources/pipelineSheet';
 import { splitNameValue } from '@/lib/sources/clickup';
@@ -249,5 +249,69 @@ describe('the Upwork proposals tab', () => {
   it('leaves an unknown position or speed empty rather than calling it zero', () => {
     expect(got[1].position).toBe(null);
     expect(got[1].responseMinutes).toBe(null);
+  });
+});
+
+describe('clients, CAC, LTV and growth, from a small ledger worked out by hand', () => {
+  const row = (date: string, direction: string, channel: string, category: string, who: string, amount: number, status = direction === 'In' ? 'Received' : 'Paid') =>
+    ({ date, direction, channel, category, who, amount, howPaid: '', status, notes: '', sourceId: '' });
+  const CATS = ['Consultation', 'Build'];
+  const book = [
+    row('2026-07-10', 'In', 'Network', 'Consultation', 'Ana Ruiz', 500),
+    row('2026-07-20', 'Out', 'Upwork', 'Lead generation', 'Upwork', 100),
+    row('2026-08-05', 'In', 'Upwork', 'Build', 'Borealis Ltd', 300),
+    row('2026-08-06', 'Out', 'Upwork', 'Lead generation', 'Upwork', 200),
+    row('2026-08-20', 'Out', 'Cold email', 'Software', 'Mailer', 150),
+    row('2026-08-25', 'Out', 'Overhead', 'Education', 'Course', 400),
+    row('2026-09-02', 'In', 'Upwork', 'Build', 'borealis ltd ', 200),          // same client, different typing
+    row('2026-09-03', 'In', 'Upwork', 'Software', 'Tool refund', 90),           // a refund, not a client
+    row('2026-09-04', 'In', 'Upwork', 'Build', 'Cedar Co', 100, 'Pending'),     // not paid yet, not a client yet
+  ];
+  it('a client is counted once, on the channel of the first payment, and a refund is not a client', () => {
+    const c = clientList(book, CATS);
+    expect(c.map((x) => x.who)).toEqual(['Ana Ruiz', 'Borealis Ltd']);
+    expect(c[1]).toMatchObject({ channel: 'Upwork', first: '2026-08-05', revenue: 500 });
+    expect(otherMoneyIn(book, CATS, all).amount).toBe(190);
+  });
+  it('CAC is channel spend per client and LTV is cash per client', () => {
+    const u = unitEconomics(book, NAMES, CATS);
+    const up = u.rows.find((r) => r.channel === 'Upwork');
+    expect(up).toMatchObject({ clients: 1, spend: 300, cac: 300, ltv: 500 });
+    expect(up?.backPerDollar).toBeCloseTo(500 / 300);
+    const cold = u.rows.find((r) => r.channel === 'Cold email');
+    expect(cold).toMatchObject({ clients: 0, spend: 150, cac: null, ltv: null, backPerDollar: 0 });
+    expect(u.rows.find((r) => r.channel === 'Network')).toMatchObject({ clients: 1, spend: 0, cac: 0, ltv: 500, backPerDollar: null });
+  });
+  it('combined CAC leaves Overhead out and combined LTV covers every client', () => {
+    const { all: a } = unitEconomics(book, NAMES, CATS);
+    expect(a.clients).toBe(2);
+    expect(a.spend).toBe(450);
+    expect(a.cac).toBe(225);
+    expect(a.ltv).toBe(500);
+  });
+  it('growth has one point per month with no gaps and ends at the totals', () => {
+    const log: StageEvent[] = [
+      { at: '2026-08-03T10:00:00Z', taskId: 'a', task: 'A', from: '', to: 'meeting booked', how: 'webhook' },
+      { at: '2026-09-01T10:00:00Z', taskId: 'a', task: 'A', from: 'meeting booked', to: 'meeting booked', how: 'webhook' },
+      { at: '2026-09-09T10:00:00Z', taskId: 'b', task: 'B', from: '', to: 'meeting booked', how: 'webhook' },
+    ];
+    const g = growth(book, log, CATS, '2026-10-05', 'month');
+    expect(g.map((x) => x.start)).toEqual(['2026-07-01', '2026-08-01', '2026-09-01', '2026-10-01']);
+    expect(g.map((x) => x.moneyIn)).toEqual([500, 300, 390, 0]);
+    expect(g.map((x) => x.meetings)).toEqual([0, 1, 1, 0]);
+    expect(g.map((x) => x.newClients)).toEqual([1, 1, 0, 0]);
+    expect(g[1]).toMatchObject({ cac: 225, ltv: 400, clientsToDate: 2 });
+    const last = g[g.length - 1];
+    expect(last.partial).toBe(true);
+    expect(last.inToDate).toBe(1190);
+    expect(last.profitToDate).toBe(1190 - 850);
+    expect(last).toMatchObject({ cac: 225, ltv: 500 });
+    expect(last.inToDate).toBe(moneyTotals(book, all).revenueIn);
+  });
+  it('growth by week counts every row exactly once', () => {
+    const g = growth(book, [], CATS, '2026-10-05', 'week');
+    expect(g.reduce((s, x) => s + x.moneyIn, 0)).toBe(1190);
+    expect(g.reduce((s, x) => s + x.moneyOut, 0)).toBe(850);
+    expect(g[0].start).toBe('2026-07-06');
   });
 });

@@ -21,7 +21,7 @@ export function Tile({ title, span = 3, short = false, foot, children, big, bigT
     <section className={`tile${short ? ' short' : ''}`} style={{ gridColumn: `span ${span}` }} data-wide={span >= 6 ? '' : undefined}>
       <div className="tile-head">
         <span className="spec">{title}</span>
-        {big ? <button className="tile-open" onClick={() => setOpen(true)} aria-label={`Open ${title} full size`}>open</button> : null}
+        {big ? <button className="tile-open" onClick={() => setOpen(true)} aria-label={`Open ${title} full size`}>See details</button> : null}
       </div>
       <div className="tile-body">{children}</div>
       {foot ? <div className="tile-foot">{foot}</div> : null}

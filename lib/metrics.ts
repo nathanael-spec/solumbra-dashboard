@@ -404,3 +404,143 @@ export function delta(now: number, before: number | null, fmt: (n: number) => st
   if (diff === 0) return { diff, text: 'same as the period before' };
   return { diff, text: `${diff > 0 ? 'up' : 'down'} ${fmt(Math.abs(diff))} on the period before` };
 }
+
+/* ------------------------------------------------ clients, CAC, LTV, growth */
+
+/**
+ * A client is a name on a Received money in row whose category is one of the
+ * business's income categories. A refund from a tool lands in the ledger as
+ * money in too, but under a cost category like Software, and it is not a
+ * client. A blank category counts as income.
+ */
+function isClientRow(r: LedgerRow, categories: string[]): boolean {
+  if (!isIn(r) || r.status !== 'Received' || !r.who.trim()) return false;
+  const cat = r.category.trim().toLowerCase();
+  return !cat || categories.some((c) => c.toLowerCase() === cat);
+}
+
+export interface Client { who: string; channel: string; first: string; revenue: number }
+
+/** Every paying client up to a date, with the channel of their first payment and what they have paid. */
+export function clientList(ledger: LedgerRow[], categories: string[], upTo = '9999-12-31'): Client[] {
+  const map = new Map<string, Client>();
+  const rows = ledger.filter((r) => isClientRow(r, categories) && r.date <= upTo).sort((a, b) => a.date.localeCompare(b.date));
+  for (const r of rows) {
+    const key = r.who.trim().toLowerCase();
+    const c = map.get(key);
+    if (c) c.revenue = Math.round((c.revenue + r.amount) * 100) / 100;
+    else map.set(key, { who: r.who.trim(), channel: r.channel, first: r.date, revenue: r.amount });
+  }
+  return [...map.values()];
+}
+
+/** Money in that is not from a client, such as a refund. Counted in revenue by the sheet, left out of LTV here. */
+export function otherMoneyIn(ledger: LedgerRow[], categories: string[], p: { start: string; end: string }): { amount: number; rows: LedgerRow[] } {
+  const rows = ledger.filter((r) => isIn(r) && inPeriod(r.date, p) && !isClientRow(r, categories));
+  return { amount: sum(rows), rows };
+}
+
+export interface UnitRow {
+  channel: string;
+  clients: number;
+  revenue: number;          // cash received from those clients, ever
+  spend: number;            // every Out row on the channel
+  cac: number | null;       // spend / clients
+  ltv: number | null;       // revenue / clients
+  backPerDollar: number | null;   // revenue / spend
+}
+
+const unitRow = (channel: string, clients: Client[], spend: number): UnitRow => {
+  const revenue = Math.round(clients.reduce((s, c) => s + c.revenue, 0) * 100) / 100;
+  const n = clients.length;
+  return { channel, clients: n, revenue, spend, cac: n ? spend / n : null, ltv: n ? revenue / n : null, backPerDollar: spend > 0 ? revenue / spend : null };
+};
+
+/**
+ * CAC and LTV per channel and for everything combined, from the ledger alone.
+ * A client belongs to the channel of their first payment. Combined spend is
+ * every cost except Overhead, because Overhead is not spent to find clients.
+ */
+export function unitEconomics(ledger: LedgerRow[], names: string[], categories: string[], upTo = '9999-12-31'): { rows: UnitRow[]; all: UnitRow } {
+  const cl = clientList(ledger, categories, upTo);
+  const out = ledger.filter((r) => isOut(r) && r.date <= upTo);
+  const rows = names.map((ch) => unitRow(ch, cl.filter((c) => c.channel === ch), sum(out.filter((r) => r.channel === ch))));
+  return { rows, all: unitRow('All channels', cl, sum(out.filter((r) => r.channel !== OVERHEAD))) };
+}
+
+export type GrowthBucket = 'week' | 'month';
+
+export interface GrowthPoint {
+  start: string; label: string;
+  partial: boolean;            // the bucket that holds today, still filling up
+  moneyIn: number; moneyOut: number; profit: number;
+  inToDate: number; profitToDate: number;
+  meetings: number; proposals: number; deals: number;
+  newClients: number; clientsToDate: number;
+  cac: number | null; ltv: number | null;   // both to date, at the end of the bucket
+}
+
+const bucketKey = (date: string, b: GrowthBucket): string => (b === 'week' ? weekStart(date) : `${date.slice(0, 7)}-01`);
+function nextBucket(key: string, b: GrowthBucket): string {
+  if (b === 'week') {
+    const d = new Date(key + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + 7);
+    return d.toISOString().slice(0, 10);
+  }
+  const [y, m] = key.split('-').map(Number);
+  return m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+}
+
+/**
+ * The business over time, one point per week or month, from the first row ever
+ * recorded to today. Empty buckets are kept so a quiet month reads as zero.
+ * CAC and LTV are "to date" numbers: everything spent, and everything paid, up
+ * to the end of that bucket, over every client won by then. That keeps the
+ * line steady instead of jumping in a month with no new client.
+ */
+export function growth(ledger: LedgerRow[], log: StageEvent[], categories: string[], today: string, bucket: GrowthBucket = 'month', max = 60): GrowthPoint[] {
+  const entries = [...firstEntries(log).values()];
+  const stageDays = (stage: Stage): string[] => entries.filter((per) => per.has(stage)).map((per) => per.get(stage) as string);
+  const meetingDays = stageDays('meeting booked'), proposalDays = stageDays('proposal sent'), dealDays = stageDays('closed won');
+  const firsts = [ledger.map((r) => r.date).filter(Boolean).sort()[0], [...meetingDays, ...proposalDays, ...dealDays].sort()[0]].filter(Boolean) as string[];
+  if (!firsts.length) return [];
+  const first = firsts.sort()[0];
+  const clients = clientList(ledger, categories, today);
+  const years = new Set([first.slice(0, 4), today.slice(0, 4)]).size > 1;
+  const label = (k: string): string => {
+    const d = new Date(k + 'T12:00:00Z');
+    if (bucket === 'week') return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    return d.toLocaleDateString('en-US', years ? { month: 'short', year: '2-digit', timeZone: 'UTC' } : { month: 'short', timeZone: 'UTC' });
+  };
+  const out: GrowthPoint[] = [];
+  let inToDate = 0, outToDate = 0, findSpend = 0, clientCash = 0, clientsToDate = 0;
+  const lastKey = bucketKey(today, bucket);
+  for (let k = bucketKey(first, bucket); k <= lastKey; k = nextBucket(k, bucket)) {
+    const end = nextBucket(k, bucket);
+    const within = (d: string) => d >= k && d < end && d <= today;
+    const rows = ledger.filter((r) => within(r.date));
+    const moneyIn = sum(rows.filter(isIn)), moneyOut = sum(rows.filter(isOut));
+    inToDate += moneyIn; outToDate += moneyOut;
+    findSpend += sum(rows.filter((r) => isOut(r) && r.channel !== OVERHEAD));
+    clientCash += sum(rows.filter((r) => isClientRow(r, categories)));
+    const newClients = clients.filter((c) => within(c.first)).length;
+    clientsToDate += newClients;
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    out.push({
+      start: k, label: label(k), partial: k === lastKey,
+      moneyIn, moneyOut, profit: r2(moneyIn - moneyOut),
+      inToDate: r2(inToDate), profitToDate: r2(inToDate - outToDate),
+      meetings: meetingDays.filter(within).length, proposals: proposalDays.filter(within).length, deals: dealDays.filter(within).length,
+      newClients, clientsToDate,
+      cac: clientsToDate ? r2(findSpend / clientsToDate) : null,
+      ltv: clientsToDate ? r2(clientCash / clientsToDate) : null,
+    });
+  }
+  return out.slice(-max);
+}
+
+/** The first day the stage log knows about, so a chart can say when counting began. */
+export function stageLogStart(log: StageEvent[]): string | null {
+  const days = log.map((e) => e.at.slice(0, 10)).filter(Boolean).sort();
+  return days[0] ?? null;
+}
