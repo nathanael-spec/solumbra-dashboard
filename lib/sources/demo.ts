@@ -3,7 +3,7 @@
  * before a single tool is connected. `npm run demo` turns it on. Every name
  * here is fictional. The shapes are the same ones the real readers return.
  */
-import type { RetroData, RetroDay, RetroNumber, Blob, Booking, Card, DashConfig, LedgerRow, Proposal, RecurringRow, StageEvent } from '../types';
+import type { NewsletterSub, RetroData, RetroDay, RetroNumber, Blob, Booking, Card, DashConfig, LedgerRow, Proposal, RecurringRow, StageEvent } from '../types';
 import { now } from './util';
 
 const DAY = 86400000;
@@ -110,6 +110,13 @@ export function demoBlob(config: DashConfig): Blob {
     };
   });
 
+  // A made up newsletter: nine weeks of sign ups, most of them from tagged links, three of them gone again.
+  const TAGS: [string, string][] = [['linkedin', 'audit'], ['linkedin', 'audit'], ['linkedin', 'post'], ['', ''], ['website', 'footer'], ['linkedin', 'audit'], ['youtube', '']];
+  const subs: NewsletterSub[] = Array.from({ length: 37 }, (_, i) => {
+    const [source, campaign] = TAGS[i % TAGS.length];
+    return { date: daysAgo(Math.round(62 - i * 1.7)), status: i % 13 === 5 ? 'inactive' : 'active', source, campaign };
+  });
+
   const stamp = now();
   const ok = <T,>(data: T) => ({ ok: true as const, data, fetchedAt: stamp });
   return {
@@ -123,6 +130,7 @@ export function demoBlob(config: DashConfig): Blob {
     vollna: ok({ proposals, connectsBalance: 84, lastSyncAt: new Date(Date.now() - 3600000).toISOString(), from: 'api' as const }),
     stripe: ok({ availableCents: 125000, pendingCents: 80000, currency: 'usd' }),
     retro: ok(demoRetro(daysAgo)),
+    newsletter: ok({ subs, stats: { sent: 96, opened: 52, clicked: 11, openRate: 54.2, clickRate: 11.5 }, ignored: 0, capped: false }),
   };
 }
 

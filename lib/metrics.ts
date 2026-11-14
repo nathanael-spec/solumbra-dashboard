@@ -3,8 +3,8 @@
  * fetching. That keeps the numbers testable and lets the page filter without
  * asking the server again.
  */
-import type { Booking, Card, LedgerRow, Proposal, RecurringRow, RetroDay, RunRow, StageEvent, InstantlyData } from './types';
-import { daysBetween, inPeriod, lastWeeks, weekStart } from './period';
+import type { Booking, Card, LedgerRow, NewsletterData, NewsletterSub, Proposal, RecurringRow, RetroDay, RunRow, StageEvent, InstantlyData } from './types';
+import { addDays, daysBetween, inPeriod, lastWeeks, weekStart } from './period';
 import { STAGES, type Stage } from './stages';
 
 export { STAGES, type Stage };
@@ -593,4 +593,102 @@ export function channelSpend(ledger: LedgerRow[], channel: string, p: { start: s
 export function trimLeading<T>(rows: T[], hasData: (r: T) => boolean): T[] {
   const i = rows.findIndex(hasData);
   return i <= 0 ? rows : rows.slice(i);
+}
+
+/* ------------------------------------------------------------------ newsletter */
+
+/**
+ * Beehiiv's word for each sign up decides how it is counted. `active` is a
+ * subscriber today. `inactive` signed up and then left. The rest of the real
+ * ones (paused, needs attention) signed up and are neither. A sign up that was
+ * never confirmed (pending, validating, invalid) is not counted anywhere.
+ */
+const isSubscriber = (s: NewsletterSub) => s.status === 'active';
+const hasLeft = (s: NewsletterSub) => s.status === 'inactive';
+const signedUp = (s: NewsletterSub) => ['active', 'inactive', 'paused', 'needs_attention'].includes(s.status);
+
+/** "linkedin / audit", "linkedin" when there is no campaign, "direct" when there is no source at all. */
+export function sourceName(source: string, campaign: string): string {
+  const a = source.trim().toLowerCase();
+  const b = campaign.trim().toLowerCase();
+  if (a && b) return `${a} / ${b}`;
+  return a || b || 'direct';
+}
+
+export interface NewsletterNow {
+  active: number;   // subscribed today
+  left: number;     // signed up once, not subscribed any more. Beehiiv gives no day for this.
+}
+
+export function newsletterNow(d: NewsletterData): NewsletterNow {
+  return { active: d.subs.filter(isSubscriber).length, left: d.subs.filter(hasLeft).length };
+}
+
+export interface NewsletterPeriod {
+  signUps: number;
+  signUpsBefore: number | null;   // the period before, null for all time
+  leftSince: number;              // of this period's sign ups, how many have left
+  sources: { name: string; count: number }[];
+}
+
+export function newsletterPeriod(d: NewsletterData, p: { start: string; end: string; compareStart?: string; compareEnd?: string }): NewsletterPeriod {
+  const real = d.subs.filter(signedUp);
+  const rows = real.filter((s) => inPeriod(s.date, p));
+  const by = new Map<string, number>();
+  for (const s of rows) {
+    const name = sourceName(s.source, s.campaign);
+    by.set(name, (by.get(name) ?? 0) + 1);
+  }
+  const before = p.compareStart && p.compareEnd ? { start: p.compareStart, end: p.compareEnd } : null;
+  return {
+    signUps: rows.length,
+    signUpsBefore: before ? real.filter((s) => inPeriod(s.date, before)).length : null,
+    leftSince: rows.filter(hasLeft).length,
+    sources: [...by.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+  };
+}
+
+export interface NewsletterWeek { week: string; added: number; total: number }
+
+/**
+ * Today's subscribers, added up by the week they signed up. People who left
+ * are not drawn, because Beehiiv does not say when they left, so the last
+ * point always equals the number of subscribers today. At least `minWeeks`
+ * weeks are shown, so a young list still reads as a line.
+ */
+export function newsletterWeeks(d: NewsletterData, today: string, minWeeks = 8): NewsletterWeek[] {
+  const subs = d.subs.filter(isSubscriber);
+  const end = weekStart(today);
+  const first = subs.reduce((min, s) => (s.date < min ? s.date : min), today);
+  const span = Math.round(daysBetween(weekStart(first), end) / 7) + 1;
+  const n = Math.max(minWeeks, span);
+  const added = new Map<string, number>();
+  for (const s of subs) {
+    const w = weekStart(s.date > today ? today : s.date);
+    added.set(w, (added.get(w) ?? 0) + 1);
+  }
+  let total = 0;
+  return Array.from({ length: n }, (_, i) => {
+    const week = addDays(end, -7 * (n - 1 - i));
+    const a = added.get(week) ?? 0;
+    total += a;
+    return { week, added: a, total };
+  });
+}
+
+/**
+ * An open or click rate over every email sent. Under 10 emails it is a
+ * fraction, by the sample size rule. From 10 on it is the percentage Beehiiv
+ * reports. Beehiiv's pages do not say whether that number is written as 0.54
+ * or as 54, so it is compared with the counts: whichever reading sits closer
+ * to `part / sent` is the one used. Nothing is ever invented: with no counts
+ * and no reported rate the answer is null and the tile is not drawn.
+ */
+export function newsletterRate(reported: number | null, part: number, sent: number): Rate | null {
+  if (sent <= 0) return reported === null ? null : rate(0, 0);
+  const r = rate(part, sent);
+  if (r.pct === null || reported === null) return r;
+  const own = part / sent;
+  const asPercent = reported > 1 || Math.abs(reported - own * 100) < Math.abs(reported - own);
+  return { ...r, pct: asPercent ? reported : reported * 100 };
 }

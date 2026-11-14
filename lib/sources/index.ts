@@ -10,6 +10,7 @@ import { readInstantly } from './instantly';
 import { readVollna } from './vollna';
 import { readStripeBalance } from './stripe';
 import { readRetro } from './retro';
+import { readNewsletter } from './beehiiv';
 import { demoBlob } from './demo';
 
 // Vollna allows 30 calls a minute and every read is eight of them, so it keeps
@@ -48,7 +49,7 @@ export async function collect(): Promise<Blob> {
   const config = readConfig();
   if (config.demo) return demoBlob(config);
 
-  const [pnl, dash, clickup, sheetPipe, bookings, instantly, vollna, stripe, retro] = await Promise.all([
+  const [pnl, dash, clickup, sheetPipe, bookings, instantly, vollna, stripe, retro, newsletter] = await Promise.all([
     when(config.connected.sheets, 'P&L sheet', readPnl),
     when(config.connected.sheets || has('DASHBOARD_SHEET_ID'), 'dashboard sheet', readDashboardSheet),
     when(config.pipeline === 'clickup', 'ClickUp', readCards),
@@ -58,6 +59,7 @@ export async function collect(): Promise<Blob> {
     readUpwork(config),
     when(config.connected.stripe, 'Stripe', readStripeBalance),
     when(config.connected.retro, 'Retrospectives sheet', readRetro),
+    when(config.connected.beehiiv, 'Beehiiv', readNewsletter),
   ]);
 
   // The stage log is the Stage log tab plus, for a sheet pipeline, the dates on each row.
@@ -78,6 +80,6 @@ export async function collect(): Promise<Blob> {
     runs: part(dash, 'runs'),
     stageLog,
     notes: part(dash, 'notes'),
-    cards, bookings, instantly, vollna, stripe, retro,
+    cards, bookings, instantly, vollna, stripe, retro, newsletter,
   };
 }

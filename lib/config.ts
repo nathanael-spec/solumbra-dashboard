@@ -43,7 +43,7 @@ export function readConfig(): DashConfig {
     taxRate: Number(process.env.TAX_RATE ?? '0.28') || 0,
     pipeline: demo ? 'clickup' : pipelineKind(),
     connected: demo
-      ? { sheets: true, pipeline: true, calcom: true, instantly: true, vollna: true, stripe: true, retro: true }
+      ? { sheets: true, pipeline: true, calcom: true, instantly: true, vollna: true, stripe: true, retro: true, beehiiv: true }
       : {
           sheets: googleConnected() && has('PNL_SHEET_ID'),
           pipeline: pipelineKind() !== 'none' && (pipelineKind() === 'clickup' || (googleConnected() && Boolean(dashboardSheet))),
@@ -52,10 +52,12 @@ export function readConfig(): DashConfig {
           vollna: has('VOLLNA_API_TOKEN'),
           stripe: has('STRIPE_API_KEY'),
           retro: googleConnected() && has('RETRO_SHEET_ID'),
+          beehiiv: has('BEEHIIV_API_KEY') && has('BEEHIIV_PUBLICATION_ID'),
         },
     demo,
     logoUrl: process.env.LOGO_URL?.trim() || '',
     proposalsUrl: process.env.PROPOSALS_URL?.trim() || '',
     weekUrl: process.env.LINKEDIN_WEEK_URL?.trim() || '',
+    newsletterStartAt: Math.max(1, Math.round(Number(process.env.NEWSLETTER_START_AT) || 50)),
   };
 }

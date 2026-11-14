@@ -14,11 +14,12 @@ export interface DashConfig {
   categories: string[];    // what money comes in for
   taxRate: number;         // share of profit to set aside, 0.28 means 28%
   pipeline: PipelineKind;
-  connected: { sheets: boolean; pipeline: boolean; calcom: boolean; instantly: boolean; vollna: boolean; stripe: boolean; retro: boolean };
+  connected: { sheets: boolean; pipeline: boolean; calcom: boolean; instantly: boolean; vollna: boolean; stripe: boolean; retro: boolean; beehiiv: boolean };
   demo: boolean;
   logoUrl: string;
   proposalsUrl: string;  // where proposals are published, blank hides the link
   weekUrl: string;       // the weekly content review page (LinkedIn week), blank hides the link
+  newsletterStartAt: number;  // the subscriber count at which the weekly email starts
 }
 
 export interface LedgerRow {
@@ -152,6 +153,33 @@ export interface VollnaData {
 
 export interface StripeBalance { availableCents: number; pendingCents: number; currency: string }
 
+/**
+ * One newsletter sign up. The email address is read to drop test sign ups and
+ * then thrown away on the server, so it never reaches the browser.
+ */
+export interface NewsletterSub {
+  date: string;      // the day they signed up, YYYY-MM-DD in the business timezone
+  status: string;    // Beehiiv's word: active, inactive, pending, validating, invalid, needs_attention, paused
+  source: string;    // utm_source, blank when there was none
+  campaign: string;  // utm_campaign, blank when there was none
+}
+
+/** Beehiiv's own totals for every email the newsletter has sent. Test sign ups cannot be taken out of these. */
+export interface NewsletterStats {
+  sent: number;
+  opened: number;          // unique opens
+  clicked: number;
+  openRate: number | null;   // as Beehiiv reports it; the scale is settled in lib/metrics.ts
+  clickRate: number | null;
+}
+
+export interface NewsletterData {
+  subs: NewsletterSub[];
+  stats: NewsletterStats | null;   // null when Beehiiv sent no totals
+  ignored: number;                 // sign ups left out because they matched NEWSLETTER_IGNORE_EMAILS
+  capped: boolean;                 // true when the list was longer than one refresh may read
+}
+
 export interface Blob {
   generatedAt: string;
   config: DashConfig;
@@ -166,6 +194,7 @@ export interface Blob {
   vollna: Source<VollnaData>;
   stripe: Source<StripeBalance>;
   retro: Source<RetroData>;
+  newsletter: Source<NewsletterData>;
 }
 
 /* ---------------------------------------------------------------- retrospectives */

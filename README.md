@@ -21,6 +21,7 @@ password. Free to run: Vercel's free plan and the tools' own free APIs.
 | Meetings booked on your site | Cal.com | Optional |
 | Cold email: sent, bounces, replies, mailboxes | Instantly | Optional |
 | Upwork: view rate, reply rate, conversion rate, cost per reply, client cost | Vollna | Optional |
+| Newsletter: subscribers, sign ups by source, open and click rate | Beehiiv | Optional |
 | Balance available and pending | Stripe, read only | Optional |
 
 Pages for tools you do not connect are simply not shown.
@@ -51,7 +52,7 @@ It asks, in order:
 2. **Google.** It walks you through making a service account, a robot Google user, and asks for the JSON file Google gives you. You share your sheet with the robot's email. Five minutes, once.
 3. **Where is your P&L?** Paste the link of your sheet. If it has no Ledger tab, setup adds one with the right columns. If you have no P&L at all, make a blank sheet, share it, paste the link.
 4. **Where is your pipeline?** ClickUp (it lists your lists and you pick one), a Pipeline tab in the sheet (it makes it), or nowhere yet.
-5. Cal.com, Instantly, Vollna, Stripe. Press Enter to skip any of them.
+5. Cal.com, Instantly, Vollna, Stripe, Beehiiv. Press Enter to skip any of them.
 6. Your channels: the ways clients find you.
 7. A password.
 
@@ -96,7 +97,7 @@ Run `npm run deploy` again after any change.
 - A rate with fewer than 10 in the denominator is shown as "2 of 6", never as a percentage. Small samples do not get to look like trends.
 - The Upwork rates are the exception: they read as a percentage in every period, because a single week of applications is what you steer on. The fraction behind the percentage is always printed beside it, and under 50 applications the page says the rates move a lot.
 - The funnel counts the **first** time a card reached a stage, inside the period. Moving a card back and forward does not count twice.
-- There is no email open rate anywhere. Open tracking is unreliable and hurts deliverability.
+- There is no open rate for cold email. Open tracking is unreliable and hurts deliverability. The newsletter open rate is Beehiiv's own number, shown as a fraction until 10 emails have gone out.
 - Cash per closed deal is matched from the Ledger to the won cards by company or name, so it reads what was actually paid, not the deal value on the card.
 
 ## Using it with Claude Code

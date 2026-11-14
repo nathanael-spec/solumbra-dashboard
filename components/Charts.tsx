@@ -99,8 +99,10 @@ export function Bars({ data, x, series, fmt = money, axisFmt, tall = false, refe
  * Lines over time. Thick strokes, a dot on every real point, and the newest
  * value written at the end of each line. `area` fills under a single line.
  */
-export function Lines({ data, x, series, fmt = money, axisFmt, tall = false, reference, area = false }: {
+export function Lines({ data, x, series, fmt = money, axisFmt, tall = false, reference, area = false, whole = false }: {
   data: object[]; x: string; series: Series[]; fmt?: Fmt; axisFmt?: Fmt; tall?: boolean; reference?: { y: number; label: string }; area?: boolean;
+  /** For counts of people or things: the axis never shows a fraction. */
+  whole?: boolean;
 }) {
   const names = Object.fromEntries(series.map((s) => [s.key, s.name]));
   const short = axisOf(fmt, axisFmt);
@@ -118,7 +120,7 @@ export function Lines({ data, x, series, fmt = money, axisFmt, tall = false, ref
           <ComposedChart data={data} margin={{ ...margin, right: 64 }}>
             <CartesianGrid vertical={false} stroke={GRID} />
             <XAxis dataKey={x} {...xAxis} />
-            <YAxis {...yAxis} tickFormatter={(v: number) => short(v)} />
+            <YAxis {...yAxis} tickFormatter={(v: number) => short(v)} allowDecimals={!whole} />
             <Tooltip content={<Tip fmt={fmt} names={names} />} cursor={{ stroke: 'rgba(255,255,255,0.3)' }} />
             {reference ? <ReferenceLine y={reference.y} stroke={REF} strokeDasharray="5 5" label={{ value: reference.label, fill: INK68, fontSize: 13, position: 'insideBottomLeft' }} /> : null}
             {area && series.length === 1 ? <Area type="linear" dataKey={series[0].key} stroke="none" fill={series[0].color ?? C1} fillOpacity={0.16} isAnimationActive={false} tooltipType="none" activeDot={false} /> : null}

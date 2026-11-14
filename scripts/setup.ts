@@ -221,6 +221,20 @@ async function optional(): Promise<void> {
     if (!k) { set('STRIPE_API_KEY', ''); break; }
     if (await tryKey('Stripe', async () => { await get('https://api.stripe.com/v1/balance', { Authorization: `Bearer ${k}` }); return 'balance readable'; })) { set('STRIPE_API_KEY', k); break; }
   }
+  say('  Beehiiv, the newsletter tool. Settings, API, Create new API key. Shown once.');
+  say('  The publication id is on the same page, under API V2. It starts with pub_.');
+  for (;;) {
+    const k = await ask('Beehiiv API key', env.BEEHIIV_API_KEY ?? '');
+    if (!k) { set('BEEHIIV_API_KEY', ''); break; }
+    const id = await ask('Beehiiv publication id', env.BEEHIIV_PUBLICATION_ID ?? '');
+    if (await tryKey('Beehiiv', async () => { const b = await get(`https://api.beehiiv.com/v2/publications/${encodeURIComponent(id)}`, { Authorization: `Bearer ${k}` }) as { data?: { name?: string } }; return b.data?.name ? `newsletter "${b.data.name}"` : 'connected'; })) {
+      set('BEEHIIV_API_KEY', k);
+      set('BEEHIIV_PUBLICATION_ID', id);
+      set('NEWSLETTER_START_AT', await ask('How many subscribers before the weekly email starts', env.NEWSLETTER_START_AT || '50'));
+      set('NEWSLETTER_IGNORE_EMAILS', await ask('Your own test addresses to leave out of every count, comma separated, optional', env.NEWSLETTER_IGNORE_EMAILS ?? ''));
+      break;
+    }
+  }
 }
 
 async function business(): Promise<void> {

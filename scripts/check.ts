@@ -14,6 +14,7 @@ import { readBookings } from '../lib/sources/calcom';
 import { readInstantly } from '../lib/sources/instantly';
 import { readVollna } from '../lib/sources/vollna';
 import { readStripeBalance } from '../lib/sources/stripe';
+import { readNewsletter } from '../lib/sources/beehiiv';
 
 type Row = { name: string; state: 'ok' | 'failed' | 'not connected'; detail: string };
 
@@ -38,6 +39,7 @@ export async function checkAll(): Promise<Row[]> {
   await run('Vollna', c.connected.vollna, async () => { const v = await readVollna(); return `${v.proposals.length} applications, balance ${v.connectsBalance ?? 'unknown'}`; });
   await run('Upwork proposals tab', c.connected.sheets, async () => { const v = await readUpworkSheet(); return `${v.proposals.length} applications, newest ${v.lastSyncAt?.slice(0, 10) ?? 'unknown'}`; });
   await run('Stripe', c.connected.stripe, async () => { const s = await readStripeBalance(); return `available ${(s.availableCents / 100).toFixed(2)}`; });
+  await run('Beehiiv', c.connected.beehiiv, async () => { const n = await readNewsletter(); return `${n.subs.length} sign ups, ${n.ignored} test sign ups left out, totals ${n.stats ? 'readable' : 'not sent by Beehiiv'}`; });
   return rows;
 }
 

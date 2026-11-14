@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import ledgerRows from './fixtures/ledger.json';
 import { parseLedger, parseProposals, sheetDate } from '@/lib/sources/sheets';
-import { cashFromWon, channels, clientList, funnel, growth, ltv, moneyTotals, monthly, otherMoneyIn, rate, unitEconomics, upworkPeriod, weekly, daysSinceMoneyIn } from '@/lib/metrics';
+import { cashFromWon, channels, clientList, funnel, growth, ltv, moneyTotals, monthly, otherMoneyIn, rate, unitEconomics, upworkPeriod, weekly, daysSinceMoneyIn, newsletterNow, newsletterPeriod, newsletterRate, newsletterWeeks, sourceName } from '@/lib/metrics';
+import { dayIn, ignoreList, parseSubs, parseStats } from '@/lib/sources/beehiiv';
 import { channelOf, stageOf } from '@/lib/stages';
 import { parsePipeline } from '@/lib/sources/pipelineSheet';
 import { splitNameValue } from '@/lib/sources/clickup';
@@ -313,5 +314,73 @@ describe('clients, CAC, LTV and growth, from a small ledger worked out by hand',
     expect(g.reduce((s, x) => s + x.moneyIn, 0)).toBe(1190);
     expect(g.reduce((s, x) => s + x.moneyOut, 0)).toBe(850);
     expect(g[0].start).toBe('2026-07-06');
+  });
+});
+
+describe('newsletter', () => {
+  const sub = (date: string, status = 'active', source = '', campaign = '') => ({ date, status, source, campaign });
+  const data = (subs: ReturnType<typeof sub>[]) => ({ subs, stats: null, ignored: 0, capped: false });
+  const d = data([
+    sub('2026-08-31', 'active', 'linkedin', 'audit'), sub('2026-09-02', 'active', 'LinkedIn', 'Audit'), sub('2026-09-03', 'inactive', 'linkedin', 'post'),
+    sub('2026-09-15', 'active'), sub('2026-09-16', 'pending', 'linkedin', 'audit'), sub('2026-09-16', 'active', 'website', ''),
+  ]);
+
+  it('names a source, and a sign up with no tag is direct', () => {
+    expect(sourceName('linkedin', 'audit')).toBe('linkedin / audit');
+    expect(sourceName('LinkedIn', '')).toBe('linkedin');
+    expect(sourceName('', '')).toBe('direct');
+  });
+  it('counts subscribers today and the ones who left', () => {
+    expect(newsletterNow(d)).toEqual({ active: 4, left: 1 });
+  });
+  it('counts sign ups in the period by source, biggest first, and never an unconfirmed one', () => {
+    const p = newsletterPeriod(d, makePeriod('month', TODAY));
+    expect(p.signUps).toBe(4);
+    expect(p.leftSince).toBe(1);
+    expect(p.signUpsBefore).toBe(1);
+    expect(p.sources).toEqual([{ name: 'direct', count: 1 }, { name: 'linkedin / audit', count: 1 }, { name: 'linkedin / post', count: 1 }, { name: 'website', count: 1 }]);
+    expect(newsletterPeriod(d, all).sources[0]).toEqual({ name: 'linkedin / audit', count: 2 });
+    expect(newsletterPeriod(d, all).signUpsBefore).toBeNull();
+  });
+  it('adds subscribers up by week, ends on the number of subscribers today, and shows at least 8 weeks', () => {
+    const w = newsletterWeeks(d, TODAY);
+    expect(w).toHaveLength(8);
+    expect(w[w.length - 1]).toEqual({ week: '2026-09-14', added: 2, total: 4 });
+    expect(w[w.length - 3]).toEqual({ week: '2026-08-31', added: 2, total: 2 });
+    expect(newsletterWeeks(data([]), TODAY).every((x) => x.total === 0)).toBe(true);
+  });
+  it('shows a rate as a fraction under 10 emails and never invents one', () => {
+    expect(newsletterRate(null, 0, 0)).toBeNull();
+    expect(newsletterRate(0, 0, 0)?.whole).toBe(0);
+    expect(newsletterRate(0.5, 3, 7)).toMatchObject({ part: 3, whole: 7, pct: null });
+  });
+  it('reads the reported rate on whichever scale matches the counts', () => {
+    expect(newsletterRate(0.8, 9, 12)?.pct).toBeCloseTo(80);
+    expect(newsletterRate(54.2, 52, 96)?.pct).toBeCloseTo(54.2);
+    expect(newsletterRate(0.4, 1, 200)?.pct).toBeCloseTo(0.4);
+    expect(newsletterRate(null, 52, 96)?.pct).toBeCloseTo(54.17, 1);
+  });
+});
+
+describe('newsletter reader', () => {
+  it('drops test sign ups by any piece of their address and keeps no address', () => {
+    const ignore = ignoreList(' Test@ , example.org ,');
+    expect(ignore).toEqual(['test@', 'example.org']);
+    const { subs, ignored } = parseSubs([
+      { email: 'reader@example.com', status: 'active', created: 1789560000, utm_source: 'linkedin', utm_campaign: 'audit' },
+      { email: 'My.TEST@example.com', status: 'active', created: 1789560000 },
+      { email: 'me@example.org', status: 'active', created: 1789560000 },
+    ], ignore, 'UTC');
+    expect(ignored).toBe(2);
+    expect(subs).toEqual([{ date: dayIn('UTC', 1789560000), status: 'active', source: 'linkedin', campaign: 'audit' }]);
+    expect(JSON.stringify(subs)).not.toContain('@');
+  });
+  it('puts a sign up on the right day for the timezone', () => {
+    expect(dayIn('UTC', 1789603200)).toBe('2026-09-17');
+    expect(dayIn('America/Chicago', 1789603200)).toBe('2026-09-16');
+  });
+  it('reads the totals, and answers null when Beehiiv sent none', () => {
+    expect(parseStats(undefined)).toBeNull();
+    expect(parseStats({ total_sent: 12, total_unique_opened: 9, total_clicked: 6, average_open_rate: 0.8 })).toEqual({ sent: 12, opened: 9, clicked: 6, openRate: 0.8, clickRate: null });
   });
 });

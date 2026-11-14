@@ -72,6 +72,22 @@ its API is free for your own proposals.
 
 The dashboard never calls the job search endpoints, which cost credits.
 
+## Beehiiv, optional, for the newsletter
+
+Beehiiv is the tool that sends a newsletter. Connecting it turns on the
+Newsletter screen: subscribers, new sign ups, where they came from.
+
+1. In Beehiiv, **Settings**, **API**.
+2. **Create new API key**, any name, **Create**. Copy it. Beehiiv shows it once.
+3. On the same page, under **API V2**, copy the **Publication ID**. It starts with `pub_`.
+
+Setup asks two more things. The subscriber count at which your weekly email
+starts (50 if you press Enter). And your own test addresses, so they are left
+out of every count.
+
+Beehiiv says the day a person signed up. It does not say the day a person
+left. So the screen shows unsubscribes for all time only.
+
 ## Stripe, optional, balance only
 
 The dashboard never counts money from Stripe. Money is counted from the

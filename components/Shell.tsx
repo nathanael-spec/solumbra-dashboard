@@ -16,6 +16,7 @@ const ALL_PAGES: { href: string; label: string; needs?: Need }[] = [
   { href: '/money', label: 'Money' },
   { href: '/cold-email', label: 'Cold email', needs: 'instantly' },
   { href: '/upwork', label: 'Upwork', needs: 'vollna' },
+  { href: '/newsletter', label: 'Newsletter', needs: 'beehiiv' },
   { href: '/retro', label: 'Retro', needs: 'retro' },
 ];
 
@@ -26,7 +27,7 @@ const PERIODS: { key: PeriodKey; label: string }[] = [
   { key: 'all', label: 'All time' },
 ];
 
-type SourceKey = keyof Pick<Blob, 'ledger' | 'stageLog' | 'cards' | 'bookings' | 'instantly' | 'vollna' | 'stripe' | 'retro'>;
+type SourceKey = keyof Pick<Blob, 'ledger' | 'stageLog' | 'cards' | 'bookings' | 'instantly' | 'vollna' | 'stripe' | 'retro' | 'newsletter'>;
 
 function sourceList(blob: Blob | null): { key: SourceKey; name: string; what: string }[] {
   const pipe = blob?.config.pipeline ?? 'clickup';
@@ -39,6 +40,7 @@ function sourceList(blob: Blob | null): { key: SourceKey; name: string; what: st
     { key: 'vollna', name: 'Vollna', what: 'Upwork results' },
     { key: 'stripe', name: 'Stripe', what: 'balance' },
     { key: 'retro', name: 'Retro sheet', what: 'retrospectives' },
+    { key: 'newsletter', name: 'Beehiiv', what: 'newsletter' },
   ];
 }
 
