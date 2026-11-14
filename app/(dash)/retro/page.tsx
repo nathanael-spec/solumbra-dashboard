@@ -32,7 +32,7 @@ function Delta({ n }: { n: RetroNumber }) {
 
 function Numbers({ ch }: { ch: RetroChannel }) {
   return (
-    <table className="grid-table retro-num">
+    <div className="table-scroll"><table className="grid-table retro-num">
       <thead><tr><th>Number</th><th className="n">This period</th><th className="n">Before</th><th className="n">Change</th><th className="n">All time</th></tr></thead>
       <tbody>
         {ch.numbers.map((n) => (
@@ -45,7 +45,7 @@ function Numbers({ ch }: { ch: RetroChannel }) {
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
 }
 
@@ -100,14 +100,14 @@ function Learnings({ items }: { items?: RetroLearning[] }) {
   );
 }
 
-function Trend({ name, rows }: { name: string; rows: ReturnType<typeof retroSeries> }) {
+function Trend({ name, rows, readings }: { name: string; rows: ReturnType<typeof retroSeries>; readings: { date: string; n: number }[] }) {
   const pctFmt = (v: number) => pct(v, 0);
   if (name === 'LinkedIn') {
-    const hasFollowers = rows.some((r) => r.followers !== null);
+    const last = readings[readings.length - 1];
     return (
       <div className="trend-pair">
-        <div><div className="spec sub">Followers</div>{hasFollowers ? <Lines data={rows} x="label" series={[{ key: 'followers', name: 'Followers' }]} fmt={count} /> : <Empty text="No follower reading in this range yet." />}</div>
-        <div><div className="spec sub">Impressions and posts</div><Bars data={rows} x="label" series={[{ key: 'impressions', name: 'Impressions' }, { key: 'posts', name: 'Posts' }]} fmt={count} /></div>
+        <div><div className="spec sub">Followers</div>{readings.length >= 2 ? <Lines data={rows} x="label" series={[{ key: 'followers', name: 'Followers' }]} fmt={count} /> : last ? <div className="one-reading"><div className="hero small">{count(last.n)}</div><div className="sub-line">One reading so far ({last.date}). The line starts with the next retro, or with LinkedIn's follower export.</div></div> : <Empty text="No follower reading yet." />}</div>
+        <div><div className="spec sub">Impressions</div><Bars data={rows} x="label" series={[{ key: 'impressions', name: 'Impressions' }]} fmt={count} /></div>
       </div>
     );
   }
@@ -127,7 +127,7 @@ function Trend({ name, rows }: { name: string; rows: ReturnType<typeof retroSeri
   );
 }
 
-function Channel({ ch, rows, rangeText }: { ch: RetroChannel; rows: ReturnType<typeof retroSeries>; rangeText: string }) {
+function Channel({ ch, rows, rangeText, readings }: { ch: RetroChannel; rows: ReturnType<typeof retroSeries>; rangeText: string; readings: { date: string; n: number }[] }) {
   const id = ch.name.toLowerCase().replace(/\s+/g, '-');
   return (
     <>
@@ -146,13 +146,13 @@ function Channel({ ch, rows, rangeText }: { ch: RetroChannel; rows: ReturnType<t
         )}
       </Tile>
       <Tile title={`Over time, ${rangeText}`} span={7} foot="Follows the period picked at the top.">
-        <Trend name={ch.name} rows={rows} />
+        <Trend name={ch.name} rows={rows} readings={readings} />
       </Tile>
       {ch.funnel.length ? (
         <Tile title="Every number" span={5}><Numbers ch={ch} /></Tile>
       ) : (
         <Tile title="Best and worst" span={5}>
-          {ch.top?.length ? <Table head={['', 'Result', '']} rows={ch.top.map((t) => [t.label, t.value, t.note ?? ''])} /> : <Empty text="Nothing ranked yet." />}
+          {ch.top?.length ? <Table head={['Item', 'Result', 'Why']} rows={ch.top.map((t) => [t.label, t.value, t.note ?? ''])} /> : <Empty text="Nothing ranked yet." />}
         </Tile>
       )}
       {ch.diagnosis?.length ? (
@@ -175,7 +175,7 @@ export default function RetroPage() {
 
   if (!blob) return <div className="loading">{loading ? 'Reading the tools.' : 'Nothing loaded yet.'}</div>;
   if (!blob.retro.ok && blob.retro.off) return <NotConnected tool="the retrospective sheet" how="Set RETRO_SHEET_ID to the sheet the /retrospective routine writes, and connect Google." />;
-  if (!blob.retro.ok) return <main className="page report"><Tile title="Retro" span={12}><Problem text={`The retrospective sheet could not be read. ${blob.retro.error}`} /></Tile></main>;
+  if (!blob.retro.ok) return <div className="report-scroll"><main className="page report"><Tile title="Retro" span={12}><Problem text={`The retrospective sheet could not be read. ${blob.retro.error}`} /></Tile></main></div>;
 
   const { days } = blob.retro.data;
   const r: RetroRecord | undefined = retros.find((x) => x.date === pick) ?? retros[retros.length - 1];
@@ -183,11 +183,12 @@ export default function RetroPage() {
   const rows = retroSeries(days, start, end);
   const by = bucketFor(start, end);
   const rangeText = `by ${by}`;
+  const readings = days.filter((d) => d.li_followers !== undefined && d.date <= end).map((d) => ({ date: d.date, n: d.li_followers as number }));
 
-  if (!r) return <main className="page report"><Tile title="Retro" span={12}><Empty text="No retrospective yet. Run /retrospective in Claude Code and it appears here." /></Tile></main>;
+  if (!r) return <div className="report-scroll"><main className="page report"><Tile title="Retro" span={12}><Empty text="No retrospective yet. Run /retrospective in Claude Code and it appears here." /></Tile></main></div>;
 
   return (
-    <main className="page report">
+    <div className="report-scroll"><main className="page report">
       <section className="retro-top" style={{ gridColumn: '1 / -1' }}>
         <div>
           <div className="spec">Retrospective</div>
@@ -212,7 +213,7 @@ export default function RetroPage() {
       <Tile title="The changes we are making" span={7}>
         <div className="changes">
           {r.channels.map((c) => (
-            <div key={c.name} className="change">
+            <div key={c.name} className="change-card">
               <div className="spec">{c.name}</div>
               <div className="what">{c.next_change ?? 'No change this time.'}</div>
               {c.measure ? <div className="why">How we will know: {c.measure}</div> : null}
@@ -222,7 +223,7 @@ export default function RetroPage() {
         </div>
       </Tile>
 
-      {r.channels.map((c) => <Channel key={c.name} ch={c} rows={rows} rangeText={rangeText} />)}
-    </main>
+      {r.channels.map((c) => <Channel key={c.name} ch={c} rows={rows} rangeText={rangeText} readings={readings} />)}
+    </main></div>
   );
 }

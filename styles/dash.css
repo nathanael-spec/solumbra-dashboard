@@ -236,9 +236,10 @@ dialog.sheet.narrow { width: min(560px, calc(100vw - 32px)); }
 .page code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,0.06); }
 
 /* ---- retro: a report page that scrolls, unlike the one screen pages ---- */
-.page.report { overflow: auto; grid-auto-rows: auto; align-content: start; padding-bottom: 60px; }
-.page.report .tile { min-height: 0; }
-.page.report .tile-body { overflow: visible; }
+.report-scroll { min-height: 0; overflow: auto; }
+.page.report { overflow: visible; min-height: auto; grid-auto-rows: auto; align-content: start; padding-bottom: 60px; }
+.page.report .tile { min-height: auto; }
+.page.report .tile-body { overflow: visible; flex: none; }
 .retro-top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px 28px; padding: 4px 4px 2px; }
 .retro-top h1 { font-size: 30px; font-weight: 400; margin: 4px 0 4px; letter-spacing: -0.01em; color: var(--ink-95); }
 .retro-pick { display: flex; flex-direction: column; gap: 6px; }
@@ -249,10 +250,10 @@ dialog.sheet.narrow { width: min(560px, calc(100vw - 32px)); }
 .retro-h { grid-column: 1 / -1; font-size: 20px; font-weight: 500; margin: 22px 4px 0; color: var(--ink-95); scroll-margin-top: 16px; }
 .summary { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.5; color: var(--ink-95); }
 .changes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.change { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,0.04); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); }
-.change .what { font-size: 14.5px; line-height: 1.45; color: var(--ink-95); font-weight: 500; }
-.change .why, .change .last { font-size: 12.5px; line-height: 1.45; color: var(--ink-68); }
-.change .last { color: var(--ink-46); }
+.change-card { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,0.04); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); }
+.change-card .what { font-size: 14.5px; line-height: 1.45; color: var(--ink-95); font-weight: 500; }
+.change-card .why, .change-card .last { font-size: 12.5px; line-height: 1.45; color: var(--ink-68); }
+.change-card .last { color: var(--ink-46); }
 .verdict { margin: 0 0 6px; font-size: 15px; line-height: 1.5; color: var(--ink-95); }
 .verdict.small { font-size: 13.5px; }
 .kcs-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -280,7 +281,9 @@ dialog.sheet.narrow { width: min(560px, calc(100vw - 32px)); }
 .retro-num .up { color: #9fb3b3; font-variant-numeric: tabular-nums; }
 .retro-num .down { color: #c08a52; font-variant-numeric: tabular-nums; }
 .trend-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.trend-pair .chart { min-height: 170px; }
+.trend-pair .chart { flex: none; height: 200px; min-height: 0; }
+.one-reading { padding: 18px 0; display: flex; flex-direction: column; gap: 6px; }
+.retro-num td.n { white-space: nowrap; }
 .learn { display: flex; flex-direction: column; }
 .learn-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; align-items: start; }
 .chip { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; text-align: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16); color: var(--ink-68); }

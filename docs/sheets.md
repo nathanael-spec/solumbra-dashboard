@@ -84,3 +84,17 @@ One row per retrospective of a cold email batch: Run, Since, Until, People,
 Sent, Bounced, Bounce %, Replies, Human, Positive, Calls, Report. Positive
 replies and calls booked are the two numbers Instantly cannot know, which is
 why they are typed in by hand.
+
+## Retrospective sheet (optional, RETRO_SHEET_ID)
+
+Turns on the Retro screen. Two tabs, read only by the dashboard:
+
+- **Daily**: row 1 is headings, then one row per day. Column A is the date. Columns are found
+  by heading, any order: Upwork apps sent, Upwork viewed, Upwork replied, Upwork offers sent,
+  Upwork hired, Emails sent, Email replies (people), Email positive replies, Meetings booked,
+  Signed, Emails bounced, LinkedIn posts, LinkedIn impressions, Posts with a view count,
+  New connections accepted, Followers (total that day), Connections (total that day).
+  Leave a cell empty when the number is unknown.
+- **Retros**: row 1 is headings (Retro, Start, End, Prev start, Prev end, Data), then one
+  retrospective per row. Column F is the whole write up as JSON, shaped like `RetroRecord`
+  in `lib/types.ts`.

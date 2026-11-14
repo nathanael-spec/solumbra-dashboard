@@ -39,7 +39,7 @@ If they only want to look: `npm run demo`.
 | `lib/metrics.ts` | Every number, computed from rows, no fetching. Tested in `tests/metrics.test.ts`. |
 | `lib/period.ts` | Week, month, quarter, all time, custom, with the comparison window. |
 | `lib/store.tsx` | One fetch of `/api/data`, held in React context. Period filtering is client side and instant. |
-| `app/(dash)/*/page.tsx` | Today, Money, Pipeline, Cold email, Upwork. Each fits one screen at 1440 by 900. |
+| `app/(dash)/*/page.tsx` | Today, Money, Pipeline, Cold email, Upwork. Each fits one screen at 1440 by 900. Retro is the one exception: a report that scrolls, read from `RETRO_SHEET_ID` (`lib/sources/retro.ts`, `lib/retro.ts`). |
 | `app/api/data` | The blob, cached 5 minutes, `?fresh=1` bypasses. `app/api/manual` writes the Add form. `app/api/hooks/clickup` is the webhook. |
 | `components/` | `Tile` (opens bigger), `Charts` (Recharts, animation off, achromatic), `Bits` (Hero, KV, Table, RateText), `Shell` (rail, masthead, period picker). |
 | `styles/brand.css`, `DESIGN.md` | The visual system. Read `DESIGN.md` before touching any UI. Dark, quiet, one accent color for reference lines only. |
