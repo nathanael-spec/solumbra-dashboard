@@ -26,8 +26,8 @@ html, body { height: 100%; }
 body { overflow: hidden; }
 @media (max-width: 1000px) { body { overflow: auto; } }
 
-.app { display: grid; grid-template-columns: var(--rail) 1fr; height: 100dvh; }
-@media (max-width: 1000px) { .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; min-height: 100dvh; } }
+.app { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); height: 100dvh; }
+@media (max-width: 1000px) { .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; height: auto; min-height: 100dvh; } }
 
 /* ---- rail ---- */
 .rail {
@@ -72,7 +72,7 @@ body { overflow: hidden; }
 }
 
 /* ---- main column ---- */
-.main { position: relative; display: grid; grid-template-rows: auto 1fr; min-width: 0; height: 100dvh; }
+.main { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); min-width: 0; height: 100dvh; }
 .scroll { min-height: 0; overflow: auto; scrollbar-color: rgba(255, 255, 255, 0.22) transparent; scrollbar-width: thin; }
 @media (max-width: 1000px) { .main { height: auto; } .scroll { overflow: visible; } }
 
@@ -130,7 +130,7 @@ body { overflow: hidden; }
 }
 @supports (corner-shape: squircle) { .tile { corner-shape: squircle; } }
 .tile-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; min-height: 28px; }
-.tile-head .spec { font-size: 15px; font-weight: 500; line-height: 1.3; color: var(--ink-68); text-wrap: balance; }
+.tile-head .spec { font-size: 15px; font-weight: 500; line-height: 1.3; letter-spacing: 0; text-transform: none; color: var(--ink-68); text-wrap: balance; }
 .tile-open {
   appearance: none; border: 0; background: transparent; color: var(--ink-68); font: inherit; font-size: 13px; font-weight: 500;
   padding: 0 12px; min-height: 30px; border-radius: 999px; cursor: pointer; white-space: nowrap; flex: none;
@@ -142,7 +142,7 @@ body { overflow: hidden; }
 
 .hero { font-size: clamp(36px, 3.1vw, 52px); font-weight: 500; line-height: 1.05; letter-spacing: -0.02em; color: var(--ink-95); }
 .hero.small { font-size: clamp(24px, 2vw, 32px); }
-.hero .unit { font-size: 15px; font-weight: 400; letter-spacing: 0; color: var(--ink-68); margin-left: 8px; white-space: nowrap; }
+.hero .unit { display: inline-block; font-size: 15px; font-weight: 400; line-height: 1.3; letter-spacing: 0; color: var(--ink-68); margin-left: 8px; }
 .sub-line { font-size: 14px; color: var(--ink-68); line-height: 1.45; }
 .tabular { font-variant-numeric: tabular-nums; }
 .quiet { color: var(--ink-46); font-weight: 400; }
@@ -309,4 +309,19 @@ dialog.sheet.narrow { width: min(560px, calc(100vw - 32px)); }
   .changes, .kcs-grid, .trend-pair { grid-template-columns: minmax(0, 1fr); }
   .retro-jump { margin-left: 0; }
   .funnel-row { grid-template-columns: 90px 56px minmax(0, 1fr) 110px; }
+}
+
+/* ---- small screens: nothing may be wider than the phone ---- */
+.tile-body { min-width: 0; }
+.table-scroll { max-width: 100%; }
+@media (max-width: 640px) {
+  .mast .grow { display: none; }
+  .mast > * { min-width: 0; }
+  .segment { max-width: 100%; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .segment button { flex: none; }
+  .hero { font-size: 36px; }
+  .hero .unit { white-space: normal; }
+  .grid-table td { font-size: 14px; padding: 10px 8px; }
+  .funnel-row { grid-template-columns: 84px 44px minmax(0, 1fr) 96px; font-size: 13px; }
+  .kcs-grid, .changes, .trend-pair { grid-template-columns: minmax(0, 1fr); }
 }

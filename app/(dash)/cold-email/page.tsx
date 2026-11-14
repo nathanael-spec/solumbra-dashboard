@@ -6,7 +6,7 @@ import { Bars, C1, C3 } from '@/components/Charts';
 import { useDash } from '@/lib/store';
 import { count, pct, shortDate, plural } from '@/lib/format';
 import { emailAllTime, emailPeriod, mailboxHealth, rate } from '@/lib/metrics';
-import { inPeriod } from '@/lib/period';
+import { addDays, inPeriod } from '@/lib/period';
 import { NotConnected } from '@/components/NotConnected';
 
 export default function ColdEmailPage() {
@@ -23,7 +23,9 @@ export default function ColdEmailPage() {
   const sending = d.campaigns.filter((c) => c.sendsToday).length;
   const halted = d.campaigns.filter((c) => c.status === -2).length;
   const humanRate = rate(p.humanReplies, p.people, 50);
-  const daily = d.daily.slice(-30).map((x) => ({ ...x, label: shortDate(x.date) }));
+  // Instantly only lists the days something was sent. Every one of the last 30 days is drawn, so a quiet day shows as a gap.
+  const byDay = new Map(d.daily.map((x) => [x.date, x]));
+  const daily = Array.from({ length: 30 }, (_, i) => addDays(d.today, i - 29)).map((date) => ({ date, sent: byDay.get(date)?.sent ?? 0, newPeople: byDay.get(date)?.newPeople ?? 0, label: shortDate(date) }));
   // Positive replies and meetings are judged by a person, so they come from the retrospective sheet, day by day.
   const days = blob.retro.ok ? blob.retro.data.days.filter((x) => inPeriod(x.date, period)) : null;
   const positive = days ? days.reduce((s, x) => s + (x.em_positive ?? 0), 0) : null;

@@ -1,9 +1,10 @@
 # Solumbra dashboard
 
 A private web page that shows how your agency is doing, from the tools you
-already use. Four numbers on top: **meetings booked, proposals sent, deals
-closed, cash collected**. Under them, the money, the pipeline, cold email
-and Upwork, each on its own page. It reads your Google Sheet, your CRM and
+already use. Four numbers on top: **cash collected, profit, new paying clients, meetings
+booked**, then what a client costs (CAC) and what a client pays (LTV) for
+each channel. Under them, growth over time, the money, cold email and Upwork,
+each on its own page. It reads your Google Sheet, your CRM and
 your sending tools every five minutes. Nothing is typed twice.
 
 ![The Today page](docs/today.png)

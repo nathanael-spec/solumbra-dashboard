@@ -5,7 +5,7 @@ import { BarList, Change, Hero, Notice, Table } from '@/components/Bits';
 import { Bars, C1, C2 } from '@/components/Charts';
 import { useDash } from '@/lib/store';
 import { money, count, plural, shortDate } from '@/lib/format';
-import { cashDates, clientList, daysSinceMoneyIn, funnel, incomeByChannel, moneyTotals, monthly, otherMoneyIn, unitEconomics, type UnitRow } from '@/lib/metrics';
+import { cashDates, clientList, daysSinceMoneyIn, funnel, incomeByChannel, moneyTotals, monthly, trimLeading, otherMoneyIn, unitEconomics, type UnitRow } from '@/lib/metrics';
 import { daysBetween, inPeriod } from '@/lib/period';
 import { SetupNeeded } from '@/components/NotConnected';
 
@@ -51,7 +51,7 @@ export default function TodayPage() {
   const unit = unitEconomics(ledger, names, categories);
   const shown = unit.rows.filter((r) => r.clients > 0 || r.spend > 0);
   const top = Math.max(...[unit.all, ...shown].flatMap((r) => [r.cac ?? 0, r.ltv ?? 0]), 0.0001);
-  const months = monthly(ledger, today, 6);
+  const months = trimLeading(monthly(ledger, today, 6), (x) => x.inAmt > 0 || x.outAmt > 0);
   const from = incomeByChannel(ledger, period).map((x) => ({ name: x.channel, value: x.amount }));
   const cash = cashDates(ledger, period);
   const since = daysSinceMoneyIn(ledger, today);

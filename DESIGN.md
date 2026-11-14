@@ -548,31 +548,35 @@ Paste one of these with the file.
 
 ## Data display
 
-Set on 2026-09-17 by the dashboard, the first dense screen. It composes the tokens above and
-changes nothing in them.
+Set on 2026-09-17 by the dashboard, rebuilt 2026-11-13 because the first version was too
+small and too grey to read. On a data screen, being read at a glance wins over the "no hue"
+rule above. Everything outside the charts stays neutral.
 
-- **Tiles are panes.** Radius 23, fill `.05`, the three inset rim shadows, padding 16 to 18px.
-  A tile has a spec label (10.5px, uppercase, 0.18em, 46%), one body, and one quiet foot line
-  (12px, 46%) that says what the number is and where it came from.
-- **Hero numbers** are 30 to 44px at weight 400, tabular, with the unit at half size in 46%.
-  Body and label text stays 12 to 13px. Nothing lives between the two sizes.
-- **Series are light, not hue.** Series one is white at `.86`, series two is `--sheen`, series
-  three is white at `.34`. Never more than three series, and any chart with two or more carries
-  a legend and a tooltip, so identity never rests on colour. `--ember` appears only as a dashed
-  reference line (a ceiling, a benchmark, break even), never as a series or a fill.
-- **Grid lines** are white at `.06`, horizontal only. Axis text is 11px at 46%. No axis lines.
-- **Bars** have 4px rounded tops, a 2px gap between neighbours, and a 38px maximum width.
-  Lines are 2px with no dots until hover. Nothing animates in.
-- **Tables** keep the console's roster style: 10.5px uppercase headings at 46%, 13px cells,
-  1px `.09` rules, numbers right aligned and tabular, row hover `.03`.
+- **Tiles are panes.** Radius 23, fill `.05`, the three inset rim shadows, padding 20 to 22px.
+  A tile has a title in sentence case (15px, weight 500, 68%), one body, and at most one foot
+  line (13.5px, 68%) that says what the number is and where it came from.
+- **Hero numbers** are 36 to 52px at weight 500, with the unit at 15px in 68%. All other text
+  is 14 to 15px. No uppercase labels and nothing under 12.5px.
+- **Charts carry colour, in a fixed order:** blue `#3987e5`, orange `#d95926`, green
+  `#199e70`, yellow `#c98500`. Blue is money in and the main series, orange is money out and
+  cost. The set was checked for colour blind separation and contrast on the tile surface. Any
+  chart with two or more series has a legend, and values are written on the marks when there
+  is room, so identity never rests on colour alone. Never two y scales on one chart.
+- **Up and down** use a small drawn arrow, words, and green `#3fbf7f` or orange `#ec835a`.
+  These two are reserved for good and bad moves and for notices. They are never a series.
+- **Grid lines** are white at `.08`, horizontal only. Axis text is 13px at 68%. No axis lines.
+- **Bars** have 4px rounded tops and a 64px maximum width. **Lines** are 3px with a dot on
+  every point and the newest value written at the end. Charts are 280 to 340px tall. Nothing
+  animates in.
+- **Tables** have 13px headings in sentence case, 15px cells, 1px `.09` rules, numbers right
+  aligned and tabular, row hover `.03`.
 - **Rates keep the sample size rule.** Under 10 in the denominator a rate is shown as a
   fraction ("2 of 6"), never a percentage.
-- **Progress** is still counted marks, twenty of them at 18 by 2px, never a bar.
-- **Density.** The page grid is 12 columns, 14px gap, 18 by 28px padding, and each screen is
-  laid out to fit 1440 by 900 with no page scroll. Under 1000px the grid is two columns and
-  the page scrolls; under 640px one column.
-- **A source that fails** shows a plain sentence in its tile, radius 14, fill `.04`, ring `.12`.
-  Never a red box, never an icon.
+- **Density.** The page grid is 12 columns, 18px gap, 22 by 32px padding. The page scrolls.
+  Do not shrink a chart to fit one screen. Under 1000px the grid is two columns; under 640px
+  one column.
+- **A source that fails or is out of date** shows a plain sentence in a notice, radius 14.
+  Never an icon.
 
 ## Known gaps
 

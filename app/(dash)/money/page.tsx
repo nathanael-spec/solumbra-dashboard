@@ -5,7 +5,7 @@ import { BarList, Change, Hero, KV, Table } from '@/components/Bits';
 import { Bars, Lines, C1, C2 } from '@/components/Charts';
 import { useDash } from '@/lib/store';
 import { money, pct, plural, shortDate } from '@/lib/format';
-import { channels, fixedMonthly, moneyTotals, monthly, otherMoneyIn, spendByCategory, unchannelled } from '@/lib/metrics';
+import { channels, fixedMonthly, moneyTotals, monthly, trimLeading, otherMoneyIn, spendByCategory, unchannelled } from '@/lib/metrics';
 import { daysBetween } from '@/lib/period';
 
 export default function MoneyPage() {
@@ -21,7 +21,7 @@ export default function MoneyPage() {
   const versus = span === 1 ? 'the day before' : `the ${span} days before`;
   const m = moneyTotals(ledger, period);
   const mb = before ? moneyTotals(ledger, before) : null;
-  const months = monthly(ledger, today, 6);
+  const months = trimLeading(monthly(ledger, today, 6), (x) => x.inAmt > 0 || x.outAmt > 0);
   const cats = spendByCategory(ledger, period).map((c) => ({ name: c.category, value: c.amount }));
   const ch = channels(ledger, period, names).filter((c) => c.inAmt || c.outAmt);
   const lost = unchannelled(ledger, names);
@@ -49,7 +49,7 @@ export default function MoneyPage() {
         <Change now={m.profit} before={mb?.profit} fmt={money} versus={versus} />
       </Tile>
       <Tile title="Margin" span={3}>
-        <Hero value={m.margin === null ? 'no money in' : pct(m.margin * 100, 0)} />
+        {m.margin === null ? <Hero value="no money in yet" small /> : <Hero value={pct(m.margin * 100, 0)} />}
         <div className="sub-line">{m.margin === null ? 'Margin needs money in to mean anything.' : 'The share of money in that is left after costs.'}</div>
       </Tile>
 

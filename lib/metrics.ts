@@ -3,7 +3,7 @@
  * fetching. That keeps the numbers testable and lets the page filter without
  * asking the server again.
  */
-import type { Booking, Card, LedgerRow, Proposal, RecurringRow, RunRow, StageEvent, InstantlyData } from './types';
+import type { Booking, Card, LedgerRow, Proposal, RecurringRow, RetroDay, RunRow, StageEvent, InstantlyData } from './types';
 import { daysBetween, inPeriod, lastWeeks, weekStart } from './period';
 import { STAGES, type Stage } from './stages';
 
@@ -543,4 +543,54 @@ export function growth(ledger: LedgerRow[], log: StageEvent[], categories: strin
 export function stageLogStart(log: StageEvent[]): string | null {
   const days = log.map((e) => e.at.slice(0, 10)).filter(Boolean).sort();
   return days[0] ?? null;
+}
+
+/* ------------------------------------- upwork, from the retrospective sheet */
+
+export interface UpworkCounts {
+  sent: number; viewed: number; replies: number; hired: number;
+  viewRate: Rate; replyRate: Rate; conversionRate: Rate; hireRate: Rate; replyToHire: Rate;
+  thin: boolean;
+}
+
+/**
+ * The same Upwork counts and rates, from the day by day numbers the
+ * retrospective sheet keeps. Used when the application list is an old export,
+ * so the screen still shows the current period.
+ */
+export function upworkFromDays(days: RetroDay[], p: { start: string; end: string }): UpworkCounts {
+  const rows = days.filter((d) => inPeriod(d.date, p));
+  const add = (k: 'uw_apps' | 'uw_viewed' | 'uw_replied' | 'uw_hired') => rows.reduce((s, d) => s + (d[k] ?? 0), 0);
+  const sent = add('uw_apps'), viewed = add('uw_viewed'), replies = add('uw_replied'), hired = add('uw_hired');
+  return {
+    sent, viewed, replies, hired,
+    viewRate: upRate(viewed, sent), replyRate: upRate(replies, sent), conversionRate: upRate(replies, viewed),
+    hireRate: upRate(hired, sent), replyToHire: upRate(hired, replies), thin: sent < THIN_SAMPLE,
+  };
+}
+
+export function upworkWeeklyFromDays(days: RetroDay[], today: string, n = 12): { week: string; sent: number; viewed: number; interviewed: number; hired: number }[] {
+  const weeks = lastWeeks(today, n);
+  const idx = new Map(weeks.map((w, i) => [w, i]));
+  const rows = weeks.map((week) => ({ week, sent: 0, viewed: 0, interviewed: 0, hired: 0 }));
+  for (const d of days) {
+    const i = idx.get(weekStart(d.date));
+    if (i === undefined) continue;
+    rows[i].sent += d.uw_apps ?? 0;
+    rows[i].viewed += d.uw_viewed ?? 0;
+    rows[i].interviewed += d.uw_replied ?? 0;
+    rows[i].hired += d.uw_hired ?? 0;
+  }
+  return rows;
+}
+
+/** Money spent on one channel in a period, from the ledger. */
+export function channelSpend(ledger: LedgerRow[], channel: string, p: { start: string; end: string }): number {
+  return sum(ledger.filter((r) => isOut(r) && r.channel.toLowerCase() === channel.toLowerCase() && inPeriod(r.date, p)));
+}
+
+/** Drops the empty buckets at the start of a series, so a chart begins where the data begins. */
+export function trimLeading<T>(rows: T[], hasData: (r: T) => boolean): T[] {
+  const i = rows.findIndex(hasData);
+  return i <= 0 ? rows : rows.slice(i);
 }

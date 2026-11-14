@@ -70,14 +70,14 @@ export function Bars({ data, x, series, fmt = money, axisFmt, tall = false, refe
   data: object[]; x: string; series: Series[]; fmt?: Fmt; axisFmt?: Fmt; tall?: boolean; reference?: { y: number; label: string }; shareOf?: string; labels?: boolean;
 }) {
   const names = Object.fromEntries(series.map((s) => [s.key, s.name]));
-  const showLabels = labels ?? data.length * series.length <= 14;
+  const showLabels = labels ?? data.length * series.length <= 16;
   const short = axisOf(fmt, axisFmt);
   return (
     <>
       <Legend series={series} />
       <div className={`chart${tall ? ' tall' : ''}`}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={margin} barGap={3} barCategoryGap={data.length > 16 ? '18%' : '26%'}>
+          <BarChart data={data} margin={margin} barGap={showLabels && series.length > 1 ? 16 : 3} barCategoryGap={data.length > 16 ? '18%' : showLabels && series.length > 1 ? '14%' : '26%'}>
             <CartesianGrid vertical={false} stroke={GRID} />
             <XAxis dataKey={x} {...xAxis} />
             <YAxis {...yAxis} tickFormatter={(v: number) => short(v)} allowDecimals={false} />

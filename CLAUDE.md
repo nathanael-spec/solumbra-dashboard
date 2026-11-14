@@ -39,9 +39,9 @@ If they only want to look: `npm run demo`.
 | `lib/metrics.ts` | Every number, computed from rows, no fetching. Tested in `tests/metrics.test.ts`. |
 | `lib/period.ts` | Week, month, quarter, all time, custom, with the comparison window. |
 | `lib/store.tsx` | One fetch of `/api/data`, held in React context. Period filtering is client side and instant. |
-| `app/(dash)/*/page.tsx` | Today, Money, Pipeline, Cold email, Upwork. Each fits one screen at 1440 by 900. Retro is the one exception: a report that scrolls, read from `RETRO_SHEET_ID` (`lib/sources/retro.ts`, `lib/retro.ts`). |
+| `app/(dash)/*/page.tsx` | Today, Growth, Money, Cold email, Upwork, Retro. Rebuilt 2026-11-13: few big tiles, and every page scrolls. Today leads with cash, profit, new clients, meetings, then CAC and LTV per channel. Growth shows the whole history by week or month and ignores the period picker. The Pipeline screen was removed (the pipeline is read in the CRM); the stage log is still read for meetings and deals. Retro is read from `RETRO_SHEET_ID` (`lib/sources/retro.ts`, `lib/retro.ts`). |
 | `app/api/data` | The blob, cached 5 minutes, `?fresh=1` bypasses. `app/api/manual` writes the Add form. `app/api/hooks/clickup` is the webhook. |
-| `components/` | `Tile` (opens bigger), `Charts` (Recharts, animation off, achromatic), `Bits` (Hero, KV, Table, RateText), `Shell` (rail, masthead, period picker). |
+| `components/` | `Tile` ("See details" opens the rows behind it), `Charts` (Recharts, animation off, four checked colours, values written on the marks), `Bits` (Hero, Change, KV, BarList, Notice, Table, RateText), `Shell` (rail, masthead, period picker). |
 | `styles/brand.css`, `DESIGN.md` | The visual system. Read `DESIGN.md` before touching any UI. Dark, quiet, one accent color for reference lines only. |
 | `scripts/` | `setup.ts`, `check.ts`, `deploy.ts`, `env.ts`, `demo.mjs`. |
 | `docs/` | `keys.md` (every key, click by click), `sheets.md` (every tab and column). |
@@ -54,6 +54,8 @@ These are load bearing. Do not relax them for a nicer looking page.
 - **Sample size rule.** `rate(part, whole, minN)` returns `pct: null` under `minN` and the UI shows "2 of 6". Default 10; cold email reply rates 50 people. Never format a small sample as a percentage.
 - **Upwork rates are the one exception,** by his request: `upRate` uses `minN: 1`, so view, reply, conversion and hire rates read as a percentage in every period, week included. The fraction is always printed next to the percentage and the page says "under 50 in this period, so the rates move a lot" while `thin` is true. The five numbers match the ones his proposal tracker shows: view rate `viewed/sent`, reply rate `replies/sent`, conversion rate `replies/viewed`, cost per reply and client acquisition cost, both from connects spent at $0.15.
 - **No email open rate**, ever. Instantly's `new_leads_contacted_count` is the people count, never `contacted_count`.
+- **CAC and LTV come from the ledger alone** (`unitEconomics`, `clientList`). A client is a name on a Received money in row whose category is one of `CATEGORIES`; a refund under a cost category is not a client. A client belongs to the channel of their first payment. CAC is every Out row on the channel over its clients; combined CAC leaves Overhead out. LTV is cash received per client. On Growth both are "to date" lines.
+- **Upwork falls back to the retrospective sheet's daily counts** when the application list is more than 14 days old, and the page says so.
 - **The funnel counts first entries.** `firstEntries` in `metrics.ts` takes the earliest date each card reached each stage.
 - **Outside benchmarks are labelled** as such when shown; they are never presented as the business's own target.
 - Rate limits: Instantly 20 a minute (5 calls per refresh), Vollna 30 a minute (own 15 minute cache; never call its job endpoints, they cost credits), ClickUp 100 a minute.
@@ -68,6 +70,6 @@ These are load bearing. Do not relax them for a nicer looking page.
 ## Style
 
 - Plain language in every string the person sees. Sentence case. No jargon.
-- Charts: series in white opacity steps, animation off, straight lines between real points, tooltips with counts and shares. See `DESIGN.md`, "Data display".
-- Keep each page to one screen at 1440 by 900 and readable at 375 wide. Check with a screenshot before calling a layout done.
+- Charts: colours `C1` to `C4` from `components/Charts.tsx` in that fixed order (blue is money in, orange is money out), animation off, 3px lines with dots, values written on the bars when there is room, a legend for two or more series. Never two y scales. See `DESIGN.md`, "Data display".
+- Text is 14 to 15px, hero numbers 36 to 52px, charts 280 to 340px tall. Pages scroll; do not shrink things to fit one screen. Check 1440 wide and 390 wide with a screenshot before calling a layout done.
 - Nothing personal in the repo: no real client names, no keys, no screenshots of real numbers. `tests/screenshots`, `.env*`, `public/logo.png` and `app/icon.png` are git ignored on purpose.

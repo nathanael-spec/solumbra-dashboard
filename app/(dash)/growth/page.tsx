@@ -28,7 +28,8 @@ export default function GrowthPage() {
   const now = rows[rows.length - 1];
   const prev: GrowthPoint | undefined = rows[rows.length - 2];
   const soFar = `this ${unit} so far`;
-  const versus = prev ? `all of ${bucket === 'month' ? prev.label : `the week of ${prev.label}`}` : '';
+  const periodName = prev ? (bucket === 'month' ? prev.label : `the week of ${prev.label}`) : '';
+  const versus = `all of ${periodName}`;
   const started = stageLogStart(log);
   const table = (head: string[], pick: (r: GrowthPoint) => (string | number)[], numeric: number[]) =>
     <Table head={[bucket === 'month' ? 'Month' : 'Week of', ...head]} numeric={numeric} rows={[...rows].reverse().map((r) => [r.label, ...pick(r)])} />;
@@ -51,7 +52,7 @@ export default function GrowthPage() {
       </Tile>
       <Tile title={`Money in and money out, each ${unit}`} span={6} big={table(['In', 'Out', 'Profit'], (r) => [money(r.moneyIn), money(r.moneyOut), money(r.profit)], [1, 2, 3])}>
         <Hero value={money(now.profit)} unit={`profit ${soFar}`} />
-        <Change now={now.profit} before={prev?.profit} fmt={money} versus={versus} />
+        <div className="sub-line">{money(now.moneyIn)} in and {money(now.moneyOut)} out {soFar}{prev ? `. ${money(prev.profit)} profit in ${versus}` : ''}</div>
         <Bars data={rows} x="label" series={[{ key: 'moneyIn', name: 'Money in', color: C1 }, { key: 'moneyOut', name: 'Money out', color: C2 }]} tall />
       </Tile>
 
@@ -59,7 +60,7 @@ export default function GrowthPage() {
         foot={!blob.stageLog.ok ? `The meetings could not be read. ${blob.stageLog.error}` : started ? `Counted from the stage log, which starts on ${shortDate(started)}. Meetings before that day were not recorded.` : 'No meeting has been recorded yet.'}
         big={table(['Meetings', 'Proposals', 'Deals closed'], (r) => [count(r.meetings), count(r.proposals), count(r.deals)], [1, 2, 3])}>
         <Hero value={count(now.meetings)} unit={soFar} />
-        <Change now={now.meetings} before={prev?.meetings} versus={versus} />
+        <div className="sub-line">{prev ? `${count(prev.meetings)} in ${versus}` : 'The first period on record.'}</div>
         <Bars data={rows} x="label" series={[{ key: 'meetings', name: 'Meetings booked', color: C3 }]} fmt={count} tall />
       </Tile>
       <Tile title={`New paying clients, each ${unit}`} span={6} foot="A client is counted once, in the period of their first payment."
@@ -73,13 +74,13 @@ export default function GrowthPage() {
         foot="Both lines are to date: everything spent to find clients, and everything clients have paid, divided by every client won by then. You want the blue line above the orange one, and the gap growing."
         big={table(['CAC', 'LTV', 'Clients so far'], (r) => [dollars(r.cac), dollars(r.ltv), count(r.clientsToDate)], [1, 2, 3])}>
         <Hero value={now.ltv === null ? 'no client yet' : money(now.ltv)} unit={now.cac === null ? undefined : `LTV, against ${money(now.cac)} CAC`} />
-        {prev && now.cac !== null && prev.cac !== null ? <Change now={now.cac} before={prev.cac} fmt={(n) => `CAC ${money(n)}`} versus={versus} lowerIsBetter /> : null}
+        {prev && now.cac !== null && prev.cac !== null ? <Change now={now.cac} before={prev.cac} fmt={(n) => `CAC ${money(n)}`} versus={`at the end of ${periodName}`} lowerIsBetter /> : null}
         <Lines data={rows} x="label" series={[{ key: 'ltv', name: 'LTV, paid by one client', color: C1 }, { key: 'cac', name: 'CAC, cost to win one client', color: C2 }]} tall />
       </Tile>
       <Tile title="Profit, added up" span={6} foot="Everything that came in, minus everything that went out, since the first row."
         big={table(['Profit', 'Profit so far'], (r) => [money(r.profit), money(r.profitToDate)], [1, 2])}>
         <Hero value={money(now.profitToDate)} unit="so far" />
-        <Change now={now.profitToDate} before={prev?.profitToDate} fmt={money} versus={prev ? `the end of ${bucket === 'month' ? prev.label : `the week of ${prev.label}`}` : ''} />
+        <Change now={now.profitToDate} before={prev?.profitToDate} fmt={money} versus={`at the end of ${periodName}`} />
         <Lines data={rows} x="label" series={[{ key: 'profitToDate', name: 'Profit so far', color: C1 }]} reference={{ y: 0, label: 'break even' }} tall />
       </Tile>
     </main>
