@@ -14,7 +14,7 @@ export interface DashConfig {
   categories: string[];    // what money comes in for
   taxRate: number;         // share of profit to set aside, 0.28 means 28%
   pipeline: PipelineKind;
-  connected: { sheets: boolean; pipeline: boolean; calcom: boolean; instantly: boolean; vollna: boolean; stripe: boolean };
+  connected: { sheets: boolean; pipeline: boolean; calcom: boolean; instantly: boolean; vollna: boolean; stripe: boolean; retro: boolean };
   demo: boolean;
   logoUrl: string;
   proposalsUrl: string;  // where proposals are published, blank hides the link
@@ -164,4 +164,44 @@ export interface Blob {
   instantly: Source<InstantlyData>;
   vollna: Source<VollnaData>;
   stripe: Source<StripeBalance>;
+  retro: Source<RetroData>;
 }
+
+/* ---------------------------------------------------------------- retrospectives */
+
+/** One day of the retrospective sheet's Daily tab. Missing numbers are absent, not zero. */
+export interface RetroDay {
+  date: string;
+  uw_apps?: number; uw_viewed?: number; uw_replied?: number; uw_offers?: number; uw_hired?: number;
+  em_sent?: number; em_replies?: number; em_positive?: number; em_meetings?: number; em_signed?: number; em_bounced?: number;
+  li_posts?: number; li_impressions?: number; li_measured?: number; li_new_connections?: number;
+  li_followers?: number; li_connections?: number;
+}
+
+export type RetroKind = 'num' | 'dec' | 'pct' | 'pct2';
+export interface RetroNumber { label: string; now: number | null; prev: number | null; all: number | null; kind: RetroKind; lower_better: boolean }
+export interface RetroStep { step: string; count: number; rate?: number | null; prev_rate?: number | null; normal_rate?: number | null; broken: boolean }
+export interface RetroPoint { what: string; evidence: string }
+export interface RetroLearning { rule: string; evidence: string; status: 'working' | 'testing' | 'not working' | 'dropped' }
+export interface RetroChannel {
+  name: string;
+  verdict?: string;                 // one line: keep going, change, or stop, and why
+  breaks?: string;
+  broken_step?: string;
+  sample_note?: string;
+  keep?: RetroPoint[]; change?: RetroPoint[]; stop?: RetroPoint[];
+  diagnosis?: { stage: string; says: string; fix: string }[];
+  top?: { label: string; value: string; note?: string }[];   // best and worst items, e.g. posts
+  learnings?: RetroLearning[];
+  last_change?: string; last_verdict?: { done?: string; worked?: string };
+  next_change?: string; measure?: string;
+  numbers: RetroNumber[];
+  funnel: RetroStep[];
+}
+export interface RetroRecord {
+  date: string; start: string; end: string; prev_start?: string; prev_end?: string;
+  summary: string[];
+  changes: { channel: string; change: string; measure?: string }[];
+  channels: RetroChannel[];
+}
+export interface RetroData { days: RetroDay[]; retros: RetroRecord[] }

@@ -43,7 +43,7 @@ export function readConfig(): DashConfig {
     taxRate: Number(process.env.TAX_RATE ?? '0.28') || 0,
     pipeline: demo ? 'clickup' : pipelineKind(),
     connected: demo
-      ? { sheets: true, pipeline: true, calcom: true, instantly: true, vollna: true, stripe: true }
+      ? { sheets: true, pipeline: true, calcom: true, instantly: true, vollna: true, stripe: true, retro: true }
       : {
           sheets: googleConnected() && has('PNL_SHEET_ID'),
           pipeline: pipelineKind() !== 'none' && (pipelineKind() === 'clickup' || (googleConnected() && Boolean(dashboardSheet))),
@@ -51,6 +51,7 @@ export function readConfig(): DashConfig {
           instantly: has('INSTANTLY_API_KEY'),
           vollna: has('VOLLNA_API_TOKEN'),
           stripe: has('STRIPE_API_KEY'),
+          retro: googleConnected() && has('RETRO_SHEET_ID'),
         },
     demo,
     logoUrl: process.env.LOGO_URL?.trim() || '',
