@@ -17,10 +17,10 @@ function rng(seed: number) {
 }
 
 const PEOPLE = [
-  ['Maria Lopez', 'Harbor Reception'], ['Tom Becker', 'Northwind Labs'], ['Aisha Rahman', 'Brightline Staffing'],
+  ['Maria Lopez', 'Harbor Reception'], ['Tom Becker', 'Northwind Labs'], ['Aisha Rahman', 'Brightline Goods'],
   ['Diego Fuentes', 'Casa Verde Rentals'], ['Hannah Weiss', 'Weiss Family Law'], ['Kenji Sato', 'Sato Property Group'],
   ['Priya Nair', 'Nair Talent Partners'], ['Lucas Moreau', 'Moreau Immigration'], ['Grace Okafor', 'Okafor Estates'],
-  ['Sven Lind', 'Lind Coastal Stays'], ['Elena Petrova', 'Petrova Recruiting'], ['Omar Haddad', 'Haddad Legal'],
+  ['Sven Lind', 'Lind Coastal Supply'], ['Elena Petrova', 'Petrova Skincare'], ['Omar Haddad', 'Haddad Legal'],
 ];
 const SOURCES = ['Upwork', 'Cold email', 'Referral', 'Website'];
 
@@ -94,7 +94,7 @@ export function demoBlob(config: DashConfig): Blob {
     return { date: ymd(d), sent, newPeople: weekend ? 0 : Math.round(sent * 0.45), replies: weekend ? 0 : Math.round(r() * 4), repliesAutomatic: weekend ? 0 : Math.round(r() * 6) };
   });
   const sentAll = daily.reduce((s, d) => s + d.sent, 0);
-  const campaigns = ['01 Staffing agencies', '02 Short term rentals', '03 Law firms'].map((name, i) => ({
+  const campaigns = ['01 Ecom welcome flow', '02 Ecom abandoned cart', '03 Ecom win back'].map((name, i) => ({
     id: `c${i}`, name, status: i === 2 ? 2 : 1, statusLabel: i === 2 ? 'paused' : 'active', dailyLimit: 80, sendsToday: i !== 2,
     leads: 900, sentAllTime: Math.round(sentAll / 3), bouncedAllTime: Math.round(sentAll / 3 * 0.021), peopleAllTime: Math.round(sentAll / 3 * 0.45),
     humanRepliesAllTime: 9 + i * 3, machineRepliesAllTime: 20, sentToday: i === 2 ? 0 : 61, bouncedToday: 1, peopleToday: 27, humanRepliesToday: i === 0 ? 1 : 0,
