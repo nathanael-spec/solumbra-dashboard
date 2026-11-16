@@ -76,14 +76,12 @@ export async function openClientCard(dealId: string): Promise<string> {
 
   const created = await cu<Task>(`/list/${listId}/task`, {
     method: 'POST',
-    body: JSON.stringify({
-      name: company || deal.name,
-      description: `Won deal: ${deal.name}${deal.url ? ` (${deal.url})` : ''}`,
-      custom_fields: custom,
-    }),
+    body: JSON.stringify({ name: company || deal.name, description: `Won deal: ${deal.name}${deal.url ? ` (${deal.url})` : ''}` }),
   });
-  if (rel) {
-    await cu(`/task/${created.id}/field/${rel.id}`, { method: 'POST', body: JSON.stringify({ value: { add: [dealId], rem: [] } }) });
+  // Written one by one: the create call silently drops dropdown values.
+  if (rel) custom.push({ id: rel.id, value: { add: [dealId], rem: [] } });
+  for (const c of custom) {
+    await cu(`/task/${created.id}/field/${c.id}`, { method: 'POST', body: JSON.stringify({ value: c.value }) });
   }
   return `client card ${created.id}`;
 }
