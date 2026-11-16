@@ -9,6 +9,7 @@ import { revalidateTag } from 'next/cache';
 import { logStageChange } from '@/lib/sources/sheets';
 import { BLOB_TAG } from '@/lib/cache/blob';
 import { stageOf } from '@/lib/stages';
+import { openClientCard } from '@/lib/sources/clientHandoff';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,5 +79,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     await logStageChange({ at: c.at, taskId: id, task: name, from: c.from, to: c.to, how: 'webhook' });
   }
   revalidateTag(BLOB_TAG);
-  return NextResponse.json({ ok: true, logged: changes.length });
+
+  let client = '';
+  if (changes.some((c) => c.to === 'closed won' && c.from !== 'closed won')) {
+    try {
+      client = await openClientCard(id);
+    } catch (e) {
+      client = `client card failed: ${(e as Error).message}`;
+      console.error(client);
+    }
+  }
+  return NextResponse.json({ ok: true, logged: changes.length, client });
 }
