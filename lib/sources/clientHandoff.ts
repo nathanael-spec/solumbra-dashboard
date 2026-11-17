@@ -8,6 +8,7 @@
  *   Rate (money)                 <- the deal card's "Deal value"
  *   Project Type (dropdown)      <- the deal card's "Service" (same option names)
  *   Company, Email               <- copied when the deal card has them
+ * The card is named after the person (the deal card's name), like the CRM.
  * A deal that already has a client card is never copied twice.
  */
 const API = 'https://api.clickup.com/api/v2';
@@ -58,7 +59,6 @@ export async function openClientCard(dealId: string): Promise<string> {
 
   const deal = await cu<Task>(`/task/${dealId}`);
   const dealField = (n: string) => deal.custom_fields?.find((f) => norm(f.name) === norm(n));
-  const company = String(dealField('Company')?.value ?? '').trim();
 
   const custom: { id: string; value: unknown }[] = [];
   const rate = byName('Rate');
@@ -76,7 +76,8 @@ export async function openClientCard(dealId: string): Promise<string> {
 
   const created = await cu<Task>(`/list/${listId}/task`, {
     method: 'POST',
-    body: JSON.stringify({ name: company || deal.name, description: `Won deal: ${deal.name}${deal.url ? ` (${deal.url})` : ''}` }),
+    // Card name is the person (the deal card's name); the business goes in Company.
+    body: JSON.stringify({ name: deal.name, description: `Won deal: ${deal.name}${deal.url ? ` (${deal.url})` : ''}` }),
   });
   // Written one by one: the create call silently drops dropdown values.
   if (rel) custom.push({ id: rel.id, value: { add: [dealId], rem: [] } });
