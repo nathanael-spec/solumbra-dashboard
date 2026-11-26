@@ -56,12 +56,42 @@ const valueOf = (t: Task, name: string): string => {
   return typeof v === 'string' ? v : '';
 };
 
-/** The existing client card for this business: same Company, else same Email. */
-export function sameClient(cards: Task[], company: string, email: string): Task | undefined {
-  const c = norm(company);
+/** A business name with case, punctuation and legal endings (LLC, Inc, Co...) taken off. */
+export function companyKey(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ')
+    .split(/\s+/).filter((w) => w && !['llc', 'inc', 'co', 'ltd', 'corp', 'company', 'the'].includes(w)).join('');
+}
+
+/**
+ * The existing client card for this business, so spelling does not have to be exact.
+ * Tried in order, first hit wins:
+ *   1. same Company once case, punctuation and LLC/Inc are ignored
+ *   2. same Email
+ *   3. one Company contains the other ("GALO Built" inside "GALO Masonry Inc (GALO Built)"),
+ *      only when exactly one card matches
+ *   4. same person name as the card, only when exactly one card matches
+ */
+export function sameClient(cards: Task[], company: string, email: string, person = ''): Task | undefined {
+  const c = companyKey(company);
   const e = email.trim().toLowerCase();
-  return (c ? cards.find((t) => norm(valueOf(t, 'Company')) === c) : undefined)
-    ?? (e ? cards.find((t) => valueOf(t, 'Email').trim().toLowerCase() === e) : undefined);
+  const only = (hits: Task[]) => (hits.length === 1 ? hits[0] : undefined);
+  if (c) {
+    const exact = cards.find((t) => companyKey(valueOf(t, 'Company')) === c);
+    if (exact) return exact;
+  }
+  if (e) {
+    const byMail = cards.find((t) => valueOf(t, 'Email').trim().toLowerCase() === e);
+    if (byMail) return byMail;
+  }
+  if (c.length >= 4) {
+    const inside = only(cards.filter((t) => {
+      const k = companyKey(valueOf(t, 'Company'));
+      return k.length >= 4 && (k.includes(c) || c.includes(k));
+    }));
+    if (inside) return inside;
+  }
+  const p = norm(person);
+  return p.length >= 5 ? only(cards.filter((t) => norm(t.name) === p)) : undefined;
 }
 
 export async function openClientCard(dealId: string): Promise<string> {
@@ -76,7 +106,10 @@ export async function openClientCard(dealId: string): Promise<string> {
     const v = t.custom_fields?.find((f) => f.id === rel?.id)?.value;
     return Array.isArray(v) ? (v as { id: string }[]) : [];
   };
-  if (cards.some((t) => linkedTo(t).some((x) => x.id === dealId))) return 'client card already exists';
+  // Already linked: either the card this deal opened itself (one deal, nothing to do), or he
+  // made the deal from the client card's Related Deal box (the card has other deals: a repeat).
+  const linked = cards.find((t) => linkedTo(t).some((x) => x.id === dealId));
+  if (linked && linkedTo(linked).length < 2) return 'client card already exists';
 
   const deal = await cu<Task>(`/task/${dealId}`);
   const dealField = (n: string) => deal.custom_fields?.find((f) => norm(f.name) === norm(n));
@@ -96,10 +129,17 @@ export async function openClientCard(dealId: string): Promise<string> {
     if (target && v) custom.push({ id: target.id, value: v });
   }
 
-  const existing = sameClient(cards, str('Company'), str('Email'));
+  const existing = linked ?? sameClient(cards, str('Company'), str('Email'), deal.name);
   if (existing) {
+    // Give the deal the client's exact Company when it has none or a different spelling,
+    // so the P&L and the dashboard see one business.
+    const companyField = dealField('Company');
+    const clientCompany = valueOf(existing, 'Company');
+    if (companyField && clientCompany && str('Company') !== clientCompany) {
+      await cu(`/task/${dealId}/field/${companyField.id}`, { method: 'POST', body: JSON.stringify({ value: clientCompany }) });
+    }
     // A second (or third) project for a client we already have: join, never copy.
-    if (rel) custom.push({ id: rel.id, value: { add: [dealId], rem: [] } });
+    if (rel && !linked) custom.push({ id: rel.id, value: { add: [dealId], rem: [] } });
     for (const c of custom) {
       if (['Company', 'Email'].some((n) => byName(n)?.id === c.id) && valueOf(existing, fields.find((f) => f.id === c.id)!.name)) continue;
       await cu(`/task/${existing.id}/field/${c.id}`, { method: 'POST', body: JSON.stringify({ value: c.value }) });
