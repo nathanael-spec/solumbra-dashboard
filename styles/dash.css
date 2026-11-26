@@ -339,7 +339,7 @@ dialog.sheet.narrow { width: min(560px, calc(100vw - 32px)); }
 .board-lead { margin: 8px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink-68); }
 .board-periods { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10); }
 .board-periods a {
-  display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px;
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px;
   font-size: 14px; font-weight: 500; letter-spacing: 0.01em; color: var(--ink-68); text-decoration: none;
   transition: color 160ms ease, background 160ms ease;
 }
