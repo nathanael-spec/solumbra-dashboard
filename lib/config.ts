@@ -12,7 +12,7 @@ const list = (v: string | undefined, fallback: string[]): string[] => {
   return xs.length ? xs : fallback;
 };
 
-export const DEFAULT_CHANNELS = ['Upwork', 'Cold email', 'Network', 'Website'];
+export const DEFAULT_CHANNELS = ['Upwork', 'Cold email', 'Network', 'Community', 'Website'];
 export const DEFAULT_CATEGORIES = ['Consultation', 'Build', 'Maintenance', 'Training', 'Other'];
 /** The channel every cost that is not about finding clients goes under. Always present, never earns. */
 export const OVERHEAD = 'Overhead';

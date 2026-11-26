@@ -40,6 +40,7 @@ export interface RecurringRow {
   what: string;
   monthly: number;
   started: string;
+  notes?: string;        // says how often it renews: "on the 5th", "per year", "two years"
 }
 
 export interface RunRow {

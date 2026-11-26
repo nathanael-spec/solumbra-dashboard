@@ -163,10 +163,10 @@ export function parseLedger(rows: string[][]): LedgerRow[] {
 
 export function parseRecurring(rows: string[][]): RecurringRow[] {
   const { col, body } = byHeading(rows);
-  const c = { item: col('item'), what: col('what it is'), monthly: col('monthly'), started: col('started') };
+  const c = { item: col('item'), what: col('what it is'), monthly: col('monthly'), started: col('started'), notes: col('notes') };
   return body
     .filter((r) => cell(r, c.item) !== '')
-    .map((r) => ({ item: cell(r, c.item), what: cell(r, c.what), monthly: num(r[c.monthly]), started: sheetDate(r[c.started]) }));
+    .map((r) => ({ item: cell(r, c.item), what: cell(r, c.what), monthly: num(r[c.monthly]), started: sheetDate(r[c.started]), notes: c.notes >= 0 ? cell(r, c.notes) : '' }));
 }
 
 export function parseRuns(rows: string[][]): RunRow[] {
