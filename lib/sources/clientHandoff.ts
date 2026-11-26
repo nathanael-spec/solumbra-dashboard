@@ -16,6 +16,13 @@
  * no new card is made: the deal is added to that card's Related Deal, the deal
  * is marked "Repeat client", Rate and Project Type move to the new project,
  * and a "complete" card goes back to "onboarding". A "recurring" card stays.
+ *
+ * COMPANY FACTS CARRY OVER (2026-11-25, his rule). Website, Email, Company,
+ * Niche and Source belong to the business, not the project. A repeat deal gets
+ * them from the client's earlier deal as soon as it is linked (fillRepeatDeal,
+ * on every stage change, not only closed won). Only empty fields are filled.
+ * The client card's Client files (the shared Drive folder, the company's
+ * knowledge base) and Onboarding doc are never touched by a new project.
  */
 const API = 'https://api.clickup.com/api/v2';
 
@@ -92,6 +99,58 @@ export function sameClient(cards: Task[], company: string, email: string, person
   }
   const p = norm(person);
   return p.length >= 5 ? only(cards.filter((t) => norm(t.name) === p)) : undefined;
+}
+
+/** Business level facts on a CRM deal. Project facts (Deal value, Service, links) never carry over. */
+export const COMPANY_FIELDS = ['Company', 'Email', 'Website', 'Niche', 'Source'];
+
+const empty = (v: unknown) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
+
+/** What to copy from earlier deals of the same client (newest first) onto a new one: only fields
+ *  the new one lacks, each taken from the newest earlier deal that has it. */
+export function carryOver(prevs: Task | Task[], deal: Task): { id: string; value: unknown }[] {
+  const list = Array.isArray(prevs) ? prevs : [prevs];
+  const out: { id: string; value: unknown }[] = [];
+  for (const n of COMPANY_FIELDS) {
+    const to = deal.custom_fields?.find((f) => norm(f.name) === norm(n));
+    const from = list.map((p) => p.custom_fields?.find((f) => norm(f.name) === norm(n))).find((f) => f && !empty(f.value));
+    if (!to || !from || !empty(to.value)) continue;
+    if (to.type === 'drop_down') {
+      // Read back as the option's orderindex, written as the option's id.
+      const opt = to.type_config?.options?.find((o) => o.id === from.value || o.orderindex === Number(from.value));
+      if (opt) out.push({ id: to.id, value: opt.id });
+    } else {
+      out.push({ id: to.id, value: from.value });
+    }
+  }
+  return out;
+}
+
+/** A deal linked to a client card that already has other deals: fill its empty company fields from the latest one. */
+export async function fillRepeatDeal(dealId: string): Promise<string> {
+  const listId = process.env.CLICKUP_CLIENTS_LIST_ID ?? '';
+  if (!listId) return '';
+  const fields = (await cu<{ fields: Field[] }>(`/list/${listId}/field`)).fields;
+  const rel = fields.find((f) => norm(f.name) === norm('Related Deal'));
+  if (!rel) return '';
+  const cards = await clientCards(listId);
+  const deals = (t: Task) => {
+    const v = t.custom_fields?.find((f) => f.id === rel.id)?.value;
+    return Array.isArray(v) ? (v as { id: string }[]) : [];
+  };
+  const deal = await cu<Task & { date_created?: string }>(`/task/${dealId}`);
+  const dv = (n: string) => { const v = deal.custom_fields?.find((f) => norm(f.name) === norm(n))?.value; return typeof v === 'string' ? v : ''; };
+  const card = cards.find((t) => deals(t).some((x) => x.id === dealId)) ?? sameClient(cards, dv('Company'), dv('Email'));
+  if (!card) return '';
+  const others = deals(card).filter((x) => x.id !== dealId);
+  if (!others.length) return '';
+  const prevs = (await Promise.all(others.map((x) => cu<Task & { date_created?: string }>(`/task/${x.id}`))))
+    .sort((a, b) => Number(b.date_created ?? 0) - Number(a.date_created ?? 0));
+  const copy = carryOver(prevs, deal);
+  for (const c of copy) {
+    await cu(`/task/${dealId}/field/${c.id}`, { method: 'POST', body: JSON.stringify({ value: c.value }) });
+  }
+  return copy.length ? `filled ${copy.length} company fields` : '';
 }
 
 export async function openClientCard(dealId: string): Promise<string> {

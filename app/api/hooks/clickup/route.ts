@@ -9,7 +9,7 @@ import { revalidateTag } from 'next/cache';
 import { logStageChange } from '@/lib/sources/sheets';
 import { BLOB_TAG } from '@/lib/cache/blob';
 import { stageOf } from '@/lib/stages';
-import { openClientCard } from '@/lib/sources/clientHandoff';
+import { fillRepeatDeal, openClientCard } from '@/lib/sources/clientHandoff';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,6 +80,15 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
   revalidateTag(BLOB_TAG);
 
+  // A repeat deal gets the business facts (Website, Email, Niche...) from the client's earlier deal.
+  let filled = '';
+  try {
+    filled = await fillRepeatDeal(id);
+  } catch (e) {
+    filled = `fill failed: ${(e as Error).message}`;
+    console.error(filled);
+  }
+
   let client = '';
   if (changes.some((c) => c.to === 'closed won' && c.from !== 'closed won')) {
     try {
@@ -89,5 +98,5 @@ export async function POST(request: Request): Promise<NextResponse> {
       console.error(client);
     }
   }
-  return NextResponse.json({ ok: true, logged: changes.length, client });
+  return NextResponse.json({ ok: true, logged: changes.length, filled, client });
 }
