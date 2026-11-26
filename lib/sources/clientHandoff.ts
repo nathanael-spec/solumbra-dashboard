@@ -10,6 +10,12 @@
  *   Company, Email               <- copied when the deal card has them
  * The card is named after the person (the deal card's name), like the CRM.
  * A deal that already has a client card is never copied twice.
+ *
+ * ONE CARD PER CLIENT (2026-11-25). A client is a business, a deal is one
+ * project. When the won deal's Company (or Email) already has a client card,
+ * no new card is made: the deal is added to that card's Related Deal, the deal
+ * is marked "Repeat client", Rate and Project Type move to the new project,
+ * and a "complete" card goes back to "onboarding". A "recurring" card stays.
  */
 const API = 'https://api.clickup.com/api/v2';
 
@@ -35,17 +41,27 @@ function optionName(f: Field | undefined): string {
   return o?.name ?? '';
 }
 
-async function alreadyHasClient(listId: string, dealId: string, relId: string | undefined): Promise<boolean> {
+async function clientCards(listId: string): Promise<Task[]> {
+  const out: Task[] = [];
   for (let page = 0; page < 10; page++) {
     const r = await cu<{ tasks: Task[]; last_page?: boolean }>(`/list/${listId}/task?include_closed=true&subtasks=true&page=${page}`);
-    for (const t of r.tasks) {
-      const rel = t.custom_fields?.find((f) => f.id === relId);
-      const linked = Array.isArray(rel?.value) ? (rel!.value as { id: string }[]) : [];
-      if (linked.some((x) => x.id === dealId)) return true;
-    }
+    out.push(...r.tasks);
     if (r.last_page !== false) break;
   }
-  return false;
+  return out;
+}
+
+const valueOf = (t: Task, name: string): string => {
+  const v = t.custom_fields?.find((f) => norm(f.name) === norm(name))?.value;
+  return typeof v === 'string' ? v : '';
+};
+
+/** The existing client card for this business: same Company, else same Email. */
+export function sameClient(cards: Task[], company: string, email: string): Task | undefined {
+  const c = norm(company);
+  const e = email.trim().toLowerCase();
+  return (c ? cards.find((t) => norm(valueOf(t, 'Company')) === c) : undefined)
+    ?? (e ? cards.find((t) => valueOf(t, 'Email').trim().toLowerCase() === e) : undefined);
 }
 
 export async function openClientCard(dealId: string): Promise<string> {
@@ -55,10 +71,16 @@ export async function openClientCard(dealId: string): Promise<string> {
   const fields = (await cu<{ fields: Field[] }>(`/list/${listId}/field`)).fields;
   const byName = (n: string) => fields.find((f) => norm(f.name) === norm(n));
   const rel = byName('Related Deal');
-  if (await alreadyHasClient(listId, dealId, rel?.id)) return 'client card already exists';
+  const cards = await clientCards(listId);
+  const linkedTo = (t: Task) => {
+    const v = t.custom_fields?.find((f) => f.id === rel?.id)?.value;
+    return Array.isArray(v) ? (v as { id: string }[]) : [];
+  };
+  if (cards.some((t) => linkedTo(t).some((x) => x.id === dealId))) return 'client card already exists';
 
   const deal = await cu<Task>(`/task/${dealId}`);
   const dealField = (n: string) => deal.custom_fields?.find((f) => norm(f.name) === norm(n));
+  const str = (n: string) => { const v = dealField(n)?.value; return typeof v === 'string' ? v : ''; };
 
   const custom: { id: string; value: unknown }[] = [];
   const rate = byName('Rate');
@@ -72,6 +94,22 @@ export async function openClientCard(dealId: string): Promise<string> {
     const target = byName(n);
     const v = dealField(n)?.value;
     if (target && v) custom.push({ id: target.id, value: v });
+  }
+
+  const existing = sameClient(cards, str('Company'), str('Email'));
+  if (existing) {
+    // A second (or third) project for a client we already have: join, never copy.
+    if (rel) custom.push({ id: rel.id, value: { add: [dealId], rem: [] } });
+    for (const c of custom) {
+      if (['Company', 'Email'].some((n) => byName(n)?.id === c.id) && valueOf(existing, fields.find((f) => f.id === c.id)!.name)) continue;
+      await cu(`/task/${existing.id}/field/${c.id}`, { method: 'POST', body: JSON.stringify({ value: c.value }) });
+    }
+    const dealType = dealField('Deal type');
+    const repeat = dealType?.type_config?.options?.find((o) => norm(o.name) === norm('Repeat client'));
+    if (dealType && repeat) await cu(`/task/${dealId}/field/${dealType.id}`, { method: 'POST', body: JSON.stringify({ value: repeat.id }) });
+    const status = (existing as Task & { status?: { status?: string } }).status?.status ?? '';
+    if (status === 'complete') await cu(`/task/${existing.id}`, { method: 'PUT', body: JSON.stringify({ status: 'onboarding' }) });
+    return `joined client card ${existing.id}`;
   }
 
   const created = await cu<Task>(`/list/${listId}/task`, {
